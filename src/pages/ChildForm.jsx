@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ErrorBox, Field, Loader, PageHead, useToast } from '../components/ui';
+import { ErrorBox, Field, Icon, Loader, PageHead, useToast } from '../components/ui';
 import { calcAge, isValidPhone, normalizePhone, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { add, get, saveScan, update } from '../lib/db';
+import { add, get, removeScan, saveScan, update } from '../lib/db';
 import { fileToScan } from '../lib/image';
 
 const BELTS = ['Ağ', 'Sarı', 'Narıncı', 'Yaşıl', 'Mavi', 'Qəhvəyi', 'Qara'];
@@ -25,6 +25,7 @@ export default function ChildForm() {
   const [form, setForm] = useState(EMPTY);
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [scanGone, setScanGone] = useState(false);
 
   const { data: existing, loading, error, reload } = useQuery(async () => {
     if (!editing) return null;
@@ -39,6 +40,18 @@ export default function ChildForm() {
   }, [existing]);
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const deleteScan = async () => {
+    if (!window.confirm('Yüklənmiş vəsiqə skanı silinsin?')) return;
+    try {
+      await removeScan(id);
+      await update('children', id, { has_scan: false });
+      setScanGone(true);
+      notify('Skan silindi.');
+    } catch (err) {
+      notify('Silinmədi: ' + err.message, 'error');
+    }
+  };
 
   const validate = () => {
     if (!form.first_name.trim() || !form.last_name.trim()) return 'Ad və soyad mütləqdir.';
@@ -146,11 +159,19 @@ export default function ChildForm() {
           </Field>
           <Field
             label="Vəsiqənin skanı və ya şəkli"
-            hint={existing?.has_scan ? 'Şəkil yüklənib. Yenisini seçsəniz əvəz olunacaq.' : 'Şəkil avtomatik kiçildilir. Yalnız admin görə bilər.'}
+            hint={existing?.has_scan && !scanGone ? 'Şəkil yüklənib. Yenisini seçsəniz əvəz olunacaq.' : 'Şəkil avtomatik kiçildilir. Yalnız admin görə bilər.'}
             wide
           >
             <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
           </Field>
+
+          {existing?.has_scan && !scanGone && (
+            <div className="field wide">
+              <button type="button" className="btn danger sm" style={{ width: 'fit-content' }} onClick={deleteScan}>
+                <Icon name="trash" size={16} /> Yüklənmiş skanı sil
+              </button>
+            </div>
+          )}
 
           <p className="form-section">Təhsil</p>
           <Field label="Məktəb">
