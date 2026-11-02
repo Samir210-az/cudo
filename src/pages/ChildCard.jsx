@@ -4,7 +4,7 @@ import { Empty, ErrorBox, Icon, Loader, Modal, PageHead, useToast } from '../com
 import PaymentModal from '../components/PaymentModal';
 import { sum } from '../lib/finance';
 import {
-  calcAge, fmtDate, fmtMoney, fmtPeriod, formatPhone, fullName, gradeLabel, trainingDuration,
+  addMonths, calcAge, currentPeriod, fmtDate, fmtMoney, fmtPeriod, formatPhone, fullName, gradeLabel, trainingDuration,
 } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
@@ -28,24 +28,33 @@ export default function ChildCard() {
   const [scan, setScan] = useState(null);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [child, rawEntries, payments, competitions] = await Promise.all([
+    const [child, rawEntries, payments, competitions, attendanceDays] = await Promise.all([
       get('children', id),
       list('competitionEntries', eq('child_id', id)),
       list('payments', eq('child_id', id)),
       list('competitions'),
+      list('attendance'),
     ]);
+    const period = currentPeriod();
+    const nextPeriod = addMonths(period, 1);
+    const visits = attendanceDays.filter((d) => (d.present || []).includes(id)).map((d) => d.id).sort();
+    const attendance = {
+      total: visits.length,
+      month: visits.filter((d) => d >= period && d < nextPeriod).length,
+      last: visits[visits.length - 1] || null,
+    };
     const byId = indexById(competitions);
     const entries = rawEntries
       .filter((e) => byId.has(e.competition_id))
       .map((e) => ({ ...e, competitions: byId.get(e.competition_id) }))
       .sort((a, b) => b.competitions.held_on.localeCompare(a.competitions.held_on));
     payments.sort((a, b) => b.period_month.localeCompare(a.period_month) || b.paid_on.localeCompare(a.paid_on));
-    return { child, entries, payments };
+    return { child, entries, payments, attendance };
   }, [id]);
 
   if (loading && !data) return <Loader />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  const { child, entries, payments } = data;
+  const { child, entries, payments, attendance } = data;
 
   const openScan = async () => {
     try {
@@ -139,6 +148,15 @@ export default function ChildCard() {
               {child.parent_phone ? <a href={`tel:+994${child.parent_phone.slice(1)}`}>{formatPhone(child.parent_phone)}</a> : null}
             </Info>
             <Info label="Qeyd">{child.note}</Info>
+          </dl>
+        </section>
+
+        <section className="card">
+          <h2>Davamiyyət</h2>
+          <dl className="kv">
+            <Info label="Bu ay">{`${attendance.month} məşq`}</Info>
+            <Info label="Cəmi">{`${attendance.total} məşq`}</Info>
+            <Info label="Sonuncu dəfə">{attendance.last ? fmtDate(attendance.last) : null}</Info>
           </dl>
         </section>
 
