@@ -15,7 +15,7 @@ export default function Reports() {
   const [month, setMonth] = useState('all');
   const [exporting, setExporting] = useState(false);
 
-  const range = useMemo(() => {
+  const bounds = useMemo(() => {
     if (month === 'all') return [`${year}-01-01`, `${year + 1}-01-01`];
     const m = Number(month);
     const start = `${year}-${pad(m + 1)}-01`;
@@ -24,7 +24,7 @@ export default function Reports() {
   }, [year, month]);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [from, to] = range;
+    const [from, to] = bounds;
     const [rawPayments, expenses, rawSalaries, kids, staff] = await Promise.all([
       list('payments', ...range('paid_on', from, to)),
       list('expenses', ...range('spent_on', from, to)),
@@ -44,7 +44,7 @@ export default function Reports() {
       .sort((a, b) => a.paid_on.localeCompare(b.paid_on));
     expenses.sort((a, b) => a.spent_on.localeCompare(b.spent_on));
     return { payments, expenses, salaries };
-  }, [range[0], range[1]]);
+  }, [bounds[0], bounds[1]]);
 
   const report = useMemo(() => {
     if (!data) return null;
