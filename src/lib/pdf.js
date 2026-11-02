@@ -264,3 +264,34 @@ export async function financeReportPdf(report, settings) {
 
   await save(buildDoc('Maliyyə hesabatı', settings, content, { subtitle: title }), `hesabat-${slug(title)}.pdf`);
 }
+
+export async function attendanceDayPdf(date, kids, present, settings) {
+  const came = kids.filter((k) => present.has(k.id)).length;
+  const body = kids.map((k, i) => [
+    String(i + 1),
+    fullName(k),
+    { text: present.has(k.id) ? 'Gəlib' : '—', alignment: 'center', bold: present.has(k.id) },
+  ]);
+  const content = [
+    kids.length ? table([20, '*', 70], ['№', 'Soyad, ad', 'Davamiyyət'], body) : { text: 'Aktiv uşaq yoxdur.', color: '#6b7788' },
+  ];
+  await save(
+    buildDoc('Məşq davamiyyəti', settings, content, { subtitle: `${fmtDate(date)} · Gələn: ${came} / ${kids.length}` }),
+    `davamiyyet-${date}.pdf`,
+  );
+}
+
+export async function attendanceMonthPdf(period, rows, trainingDays, settings) {
+  const body = rows.map((r, i) => [
+    String(i + 1),
+    fullName(r.child),
+    { text: `${r.count} / ${trainingDays}`, alignment: 'right' },
+    { text: `${r.percent}%`, alignment: 'right' },
+  ]);
+  await save(
+    buildDoc('Aylıq davamiyyət', settings, [table([20, '*', 70, 50], ['№', 'Soyad, ad', 'Gəlib', 'Faiz'], body)], {
+      subtitle: `${fmtPeriod(period)} · Məşq günü: ${trainingDays}`,
+    }),
+    `davamiyyet-${period.slice(0, 7)}.pdf`,
+  );
+}

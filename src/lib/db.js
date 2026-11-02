@@ -74,3 +74,11 @@ export async function getScan(childId) {
 }
 
 export const removeScan = (childId) => deleteDoc(doc(firestore, 'idScans', childId));
+
+export async function getAttendance(date) {
+  const snap = await getDoc(doc(firestore, 'attendance', date));
+  return snap.exists() ? snap.data().present || [] : null;
+}
+
+export const saveAttendance = (date, present) =>
+  setDoc(doc(firestore, 'attendance', date), { date, present, updated_at: new Date().toISOString() });
