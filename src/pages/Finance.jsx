@@ -6,7 +6,7 @@ import { computeDebts, EXPENSE_CATEGORIES, onlyDebtors, sum } from '../lib/finan
 import { addMonths, currentPeriod, fmtDate, fmtMoney, fullName, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
-import { supabase, unwrap } from '../lib/supabase';
+import { add, byName, eq, indexById, list, range, remove } from '../lib/db';
 
 function ExpenseModal({ onClose, onSaved }) {
   const notify = useToast();
@@ -20,17 +20,21 @@ function ExpenseModal({ onClose, onSaved }) {
     e.preventDefault();
     if (!(Number(amount) > 0)) return notify('Məbləğ sıfırdan böyük olmalıdır.', 'error');
     setBusy(true);
-    const { error } = await supabase.from('expenses').insert({
-      category,
-      amount: Number(amount),
-      spent_on: spentOn,
-      note: note.trim() || null,
-    });
-    setBusy(false);
-    if (error) return notify('Xərc saxlanılmadı: ' + error.message, 'error');
-    notify('Xərc qeyd edildi.');
-    onSaved();
-    onClose();
+    try {
+      await add('expenses', {
+        category,
+        amount: Number(amount),
+        spent_on: spentOn,
+        note: note.trim() || null,
+      });
+      notify('Xərc qeyd edildi.');
+      onSaved();
+      onClose();
+    } catch (error) {
+      notify('Xərc saxlanılmadı: ' + error.message, 'error');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -68,18 +72,18 @@ export default function Finance() {
 
   const { data, loading, error, reload } = useQuery(async () => {
     const next = addMonths(period, 1);
-    const [kids, payments, expenses] = (
-      await Promise.all([
-        supabase.from('children').select('id, first_name, last_name, monthly_fee, joined_at, status, parent_phone').eq('status', 'aktiv').order('last_name'),
-        supabase
-          .from('payments')
-          .select('*, children(first_name, last_name)')
-          .eq('period_month', period)
-          .order('paid_on', { ascending: false }),
-        supabase.from('expenses').select('*').gte('spent_on', period).lt('spent_on', next).order('spent_on', { ascending: false }),
-      ])
-    ).map(unwrap);
-    return { kids, payments, expenses };
+    const [allKids, rawPayments, expenses] = await Promise.all([
+      list('children'),
+      list('payments', eq('period_month', period)),
+      list('expenses', ...range('spent_on', period, next)),
+    ]);
+    const byId = indexById(allKids);
+    const payments = rawPayments
+      .filter((p) => byId.has(p.child_id))
+      .map((p) => ({ ...p, children: byId.get(p.child_id) }))
+      .sort((a, b) => b.paid_on.localeCompare(a.paid_on));
+    expenses.sort((a, b) => b.spent_on.localeCompare(a.spent_on));
+    return { kids: allKids.filter((k) => k.status === 'aktiv').sort(byName), payments, expenses };
   }, [period]);
 
   if (error) return <ErrorBox error={error} onRetry={reload} />;
@@ -91,16 +95,22 @@ export default function Finance() {
 
   const removePayment = async (p) => {
     if (!window.confirm('Bu ödəniş qeydi silinsin?')) return;
-    const { error: delError } = await supabase.from('payments').delete().eq('id', p.id);
-    if (delError) return notify('Silinmədi: ' + delError.message, 'error');
-    reload();
+    try {
+      await remove('payments', p.id);
+      reload();
+    } catch (delError) {
+      notify('Silinmədi: ' + delError.message, 'error');
+    }
   };
 
   const removeExpense = async (x) => {
     if (!window.confirm('Bu xərc qeydi silinsin?')) return;
-    const { error: delError } = await supabase.from('expenses').delete().eq('id', x.id);
-    if (delError) return notify('Silinmədi: ' + delError.message, 'error');
-    reload();
+    try {
+      await remove('expenses', x.id);
+      reload();
+    } catch (delError) {
+      notify('Silinmədi: ' + delError.message, 'error');
+    }
   };
 
   const debtorsPdf = async () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Field, Modal, useToast } from './ui';
-import { supabase, unwrap } from '../lib/supabase';
+import { add, update } from '../lib/db';
 import { todayISO } from '../lib/format';
 
 export default function CompetitionModal({ competition, onClose, onSaved }) {
@@ -22,11 +22,11 @@ export default function CompetitionModal({ competition, onClose, onSaved }) {
     };
     setBusy(true);
     try {
-      const row = competition
-        ? unwrap(await supabase.from('competitions').update(payload).eq('id', competition.id).select('id').single())
-        : unwrap(await supabase.from('competitions').insert(payload).select('id').single());
+      let id = competition?.id;
+      if (id) await update('competitions', id, payload);
+      else id = await add('competitions', payload);
       notify('Yarış saxlanıldı.');
-      onSaved(row.id);
+      onSaved(id);
       onClose();
     } catch (err) {
       notify('Saxlanılmadı: ' + err.message, 'error');

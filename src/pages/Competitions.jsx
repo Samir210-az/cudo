@@ -4,7 +4,7 @@ import CompetitionModal from '../components/CompetitionModal';
 import { Empty, ErrorBox, Icon, Loader, PageHead } from '../components/ui';
 import { fmtDate, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { supabase, unwrap } from '../lib/supabase';
+import { list } from '../lib/db';
 
 function CompetitionRow({ c }) {
   return (
@@ -16,7 +16,7 @@ function CompetitionRow({ c }) {
           {c.location ? ` · ${c.location}` : ''}
         </div>
       </div>
-      <span className="badge">{c.competition_entries[0]?.count || 0} nəfər</span>
+      <span className="badge">{c.count} nəfər</span>
     </Link>
   );
 }
@@ -25,13 +25,14 @@ export default function Competitions() {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
   const { data, loading, error, reload } = useQuery(
-    async () =>
-      unwrap(
-        await supabase
-          .from('competitions')
-          .select('id, name, held_on, location, competition_entries(count)')
-          .order('held_on', { ascending: false }),
-      ),
+    async () => {
+      const [competitions, entries] = await Promise.all([list('competitions'), list('competitionEntries')]);
+      const counts = new Map();
+      entries.forEach((e) => counts.set(e.competition_id, (counts.get(e.competition_id) || 0) + 1));
+      return competitions
+        .map((c) => ({ ...c, count: counts.get(c.id) || 0 }))
+        .sort((a, b) => b.held_on.localeCompare(a.held_on));
+    },
     [],
   );
 

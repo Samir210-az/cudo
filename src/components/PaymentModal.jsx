@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Field, Modal, useToast } from './ui';
-import { supabase } from '../lib/supabase';
+import { add } from '../lib/db';
 import { fullName, todayISO } from '../lib/format';
 
 export default function PaymentModal({ kids, preset = {}, onClose, onSaved }) {
@@ -24,19 +24,23 @@ export default function PaymentModal({ kids, preset = {}, onClose, onSaved }) {
     if (!childId) return notify('Uşağı seçin.', 'error');
     if (!(Number(amount) > 0)) return notify('Məbləğ sıfırdan böyük olmalıdır.', 'error');
     setBusy(true);
-    const { error } = await supabase.from('payments').insert({
-      child_id: childId,
-      amount: Number(amount),
-      period_month: `${month}-01`,
-      paid_on: paidOn,
-      method,
-      note: note.trim() || null,
-    });
-    setBusy(false);
-    if (error) return notify('Ödəniş saxlanılmadı: ' + error.message, 'error');
-    notify('Ödəniş qeyd edildi.');
-    onSaved();
-    onClose();
+    try {
+      await add('payments', {
+        child_id: childId,
+        amount: Number(amount),
+        period_month: `${month}-01`,
+        paid_on: paidOn,
+        method,
+        note: note.trim() || null,
+      });
+      notify('Ödəniş qeyd edildi.');
+      onSaved();
+      onClose();
+    } catch (error) {
+      notify('Ödəniş saxlanılmadı: ' + error.message, 'error');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

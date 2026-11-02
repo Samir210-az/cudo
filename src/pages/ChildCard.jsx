@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components/ui';
+import { Empty, ErrorBox, Icon, Loader, Modal, PageHead, useToast } from '../components/ui';
 import PaymentModal from '../components/PaymentModal';
 import { sum } from '../lib/finance';
 import {
@@ -8,7 +8,7 @@ import {
 } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
-import { supabase, unwrap } from '../lib/supabase';
+import { eq, exists, get, getScan, indexById, list, remove, removeScan, removeWhere } from '../lib/db';
 
 function Info({ label, children }) {
   return (
@@ -25,18 +25,22 @@ export default function ChildCard() {
   const notify = useToast();
   const [paying, setPaying] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [scan, setScan] = useState(null);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [child, entries, payments] = await Promise.all([
-      supabase.from('children').select('*').eq('id', id).single(),
-      supabase
-        .from('competition_entries')
-        .select('id, category, result, competitions(id, name, held_on)')
-        .eq('child_id', id),
-      supabase.from('payments').select('*').eq('child_id', id).order('period_month', { ascending: false }).order('paid_on', { ascending: false }),
+    const [child, rawEntries, payments, competitions] = await Promise.all([
+      get('children', id),
+      list('competitionEntries', eq('child_id', id)),
+      list('payments', eq('child_id', id)),
+      list('competitions'),
     ]);
-    const entryRows = unwrap(entries).sort((a, b) => b.competitions.held_on.localeCompare(a.competitions.held_on));
-    return { child: unwrap(child), entries: entryRows, payments: unwrap(payments) };
+    const byId = indexById(competitions);
+    const entries = rawEntries
+      .filter((e) => byId.has(e.competition_id))
+      .map((e) => ({ ...e, competitions: byId.get(e.competition_id) }))
+      .sort((a, b) => b.competitions.held_on.localeCompare(a.competitions.held_on));
+    payments.sort((a, b) => b.period_month.localeCompare(a.period_month) || b.paid_on.localeCompare(a.paid_on));
+    return { child, entries, payments };
   }, [id]);
 
   if (loading && !data) return <Loader />;
@@ -44,17 +48,12 @@ export default function ChildCard() {
   const { child, entries, payments } = data;
 
   const openScan = async () => {
-    const tab = window.open('', '_blank');
-    const { data: signed, error: signError } = await supabase.storage.from('id-scans').createSignedUrl(child.id_scan_path, 90);
-    if (signError) {
-      tab?.close();
-      return notify('Skan açılmadı: ' + signError.message, 'error');
-    }
-    if (tab) {
-      tab.opener = null;
-      tab.location.href = signed.signedUrl;
-    } else {
-      window.location.href = signed.signedUrl;
+    try {
+      const dataUrl = await getScan(child.id);
+      if (!dataUrl) return notify('Skan tapılmadı.', 'error');
+      setScan(dataUrl);
+    } catch (err) {
+      notify('Skan açılmadı: ' + err.message, 'error');
     }
   };
 
@@ -72,18 +71,18 @@ export default function ChildCard() {
 
   const remove = async () => {
     if (!window.confirm(`${fullName(child)} silinsin? Bu əməliyyat geri qaytarılmır.`)) return;
-    const { error: delError } = await supabase.from('children').delete().eq('id', id);
-    if (delError) {
-      return notify(
-        delError.code === '23503'
-          ? 'Ödəniş tarixçəsi olan uşağı silmək olmaz. Əvəzinə statusunu "Passiv" edin.'
-          : 'Silinmədi: ' + delError.message,
-        'error',
-      );
+    try {
+      if (await exists('payments', 'child_id', id)) {
+        return notify('Ödəniş tarixçəsi olan uşağı silmək olmaz. Əvəzinə statusunu "Passiv" edin.', 'error');
+      }
+      await removeWhere('competitionEntries', 'child_id', id);
+      if (child.has_scan) await removeScan(id);
+      await remove('children', id);
+      notify('Uşaq silindi.');
+      navigate('/panel/usaqlar', { replace: true });
+    } catch (err) {
+      notify('Silinmədi: ' + err.message, 'error');
     }
-    if (child.id_scan_path) await supabase.storage.from('id-scans').remove([child.id_scan_path]);
-    notify('Uşaq silindi.');
-    navigate('/panel/usaqlar', { replace: true });
   };
 
   return (
@@ -112,7 +111,7 @@ export default function ChildCard() {
             <Info label="Vəsiqə seriya və nömrəsi">{child.id_series}</Info>
             <Info label="FİN">{child.id_fin}</Info>
             <Info label="Vəsiqənin skanı">
-              {child.id_scan_path ? (
+              {child.has_scan ? (
                 <button type="button" className="btn sm" onClick={openScan}>Göstər</button>
               ) : null}
             </Info>
@@ -194,6 +193,12 @@ export default function ChildCard() {
           </button>
         </section>
       </div>
+
+      {scan && (
+        <Modal title="Vəsiqənin skanı" onClose={() => setScan(null)}>
+          <img src={scan} alt="Vəsiqənin skanı" style={{ width: '100%', borderRadius: 10 }} />
+        </Modal>
+      )}
 
       {paying && (
         <PaymentModal

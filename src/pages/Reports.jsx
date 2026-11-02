@@ -4,7 +4,7 @@ import { sum } from '../lib/finance';
 import { MONTHS, fmtMoney, pad } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
-import { supabase, unwrap } from '../lib/supabase';
+import { indexById, list, range } from '../lib/db';
 
 const SALARY_LABEL = 'Əmək haqqı';
 
@@ -25,13 +25,24 @@ export default function Reports() {
 
   const { data, loading, error, reload } = useQuery(async () => {
     const [from, to] = range;
-    const [payments, expenses, salaries] = (
-      await Promise.all([
-        supabase.from('payments').select('*, children(first_name, last_name)').gte('paid_on', from).lt('paid_on', to).order('paid_on'),
-        supabase.from('expenses').select('*').gte('spent_on', from).lt('spent_on', to).order('spent_on'),
-        supabase.from('salary_payments').select('*, staff(full_name)').gte('paid_on', from).lt('paid_on', to).order('paid_on'),
-      ])
-    ).map(unwrap);
+    const [rawPayments, expenses, rawSalaries, kids, staff] = await Promise.all([
+      list('payments', ...range('paid_on', from, to)),
+      list('expenses', ...range('spent_on', from, to)),
+      list('salaryPayments', ...range('paid_on', from, to)),
+      list('children'),
+      list('staff'),
+    ]);
+    const kidById = indexById(kids);
+    const staffById = indexById(staff);
+    const payments = rawPayments
+      .filter((p) => kidById.has(p.child_id))
+      .map((p) => ({ ...p, children: kidById.get(p.child_id) }))
+      .sort((a, b) => a.paid_on.localeCompare(b.paid_on));
+    const salaries = rawSalaries
+      .filter((s) => staffById.has(s.staff_id))
+      .map((s) => ({ ...s, staff: staffById.get(s.staff_id) }))
+      .sort((a, b) => a.paid_on.localeCompare(b.paid_on));
+    expenses.sort((a, b) => a.spent_on.localeCompare(b.spent_on));
     return { payments, expenses, salaries };
   }, [range[0], range[1]]);
 

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { updatePassword } from 'firebase/auth';
 import { ErrorBox, Field, Loader, PageHead, useToast } from '../components/ui';
 import { useAuth } from '../lib/auth';
 import { formatPhone, isValidPhone, normalizePhone } from '../lib/format';
 import { useQuery } from '../lib/hooks';
+import { saveSettings as persistSettings } from '../lib/db';
+import { auth, emailToPhone } from '../lib/firebase';
 import { fetchSettings } from '../lib/settings';
-import { emailToPhone, supabase } from '../lib/supabase';
 
 const FIELDS = ['club_name', 'tagline', 'phone', 'whatsapp', 'address', 'schedule', 'about'];
 
@@ -18,7 +20,7 @@ export default function Settings() {
   const [pin2, setPin2] = useState('');
 
   useEffect(() => {
-    if (data) setForm(Object.fromEntries(FIELDS.map((k) => [k, data[k] ?? ''])));
+    if (data) setForm(Object.fromEntries(FIELDS.map((k) => [k, data[k] ?? (k === 'club_name' ? 'Cüdo Klub' : '')])));
   }, [data]);
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -30,9 +32,8 @@ export default function Settings() {
     if (form.whatsapp && !isValidPhone(form.whatsapp)) return notify('WhatsApp nömrəsini düzgün yazın.', 'error');
     const clean = (v) => v.trim() || null;
     setBusy(true);
-    const { error: saveError } = await supabase
-      .from('club_settings')
-      .update({
+    try {
+      await persistSettings({
         club_name: form.club_name.trim(),
         tagline: clean(form.tagline),
         phone: form.phone ? normalizePhone(form.phone) : null,
@@ -41,23 +42,33 @@ export default function Settings() {
         schedule: clean(form.schedule),
         about: clean(form.about),
         updated_at: new Date().toISOString(),
-      })
-      .eq('id', 1);
-    setBusy(false);
-    if (saveError) return notify('Saxlanılmadı: ' + saveError.message, 'error');
-    notify('Ayarlar saxlanıldı.');
-    reload();
+      });
+      notify('Ayarlar saxlanıldı.');
+      reload();
+    } catch (saveError) {
+      notify('Saxlanılmadı: ' + saveError.message, 'error');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const changePin = async (e) => {
     e.preventDefault();
     if (!/^\d{6,}$/.test(pin)) return notify('PİN ən azı 6 rəqəm olmalıdır.', 'error');
     if (pin !== pin2) return notify('PİN-lər eyni deyil.', 'error');
-    const { error: pinError } = await supabase.auth.updateUser({ password: pin });
-    if (pinError) return notify('PİN dəyişmədi: ' + pinError.message, 'error');
-    setPin('');
-    setPin2('');
-    notify('PİN dəyişdirildi.');
+    try {
+      await updatePassword(auth.currentUser, pin);
+      setPin('');
+      setPin2('');
+      notify('PİN dəyişdirildi.');
+    } catch (pinError) {
+      notify(
+        pinError.code === 'auth/requires-recent-login'
+          ? 'Təhlükəsizlik üçün çıxış edib yenidən daxil olun, sonra PİN-i dəyişin.'
+          : 'PİN dəyişmədi: ' + pinError.message,
+        'error',
+      );
+    }
   };
 
   if (error) return <ErrorBox error={error} onRetry={reload} />;

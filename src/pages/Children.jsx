@@ -4,7 +4,7 @@ import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components
 import { calcAge, fullName, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings, initials } from '../lib/settings';
-import { supabase, unwrap } from '../lib/supabase';
+import { byName, list } from '../lib/db';
 
 export default function Children() {
   const notify = useToast();
@@ -14,7 +14,7 @@ export default function Children() {
   const [exporting, setExporting] = useState(false);
 
   const { data, loading, error, reload } = useQuery(
-    async () => unwrap(await supabase.from('children').select('*').order('last_name').order('first_name')),
+    async () => (await list('children')).sort(byName),
     [],
   );
 

@@ -3,11 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ErrorBox, Field, Loader, PageHead, useToast } from '../components/ui';
 import { calcAge, isValidPhone, normalizePhone, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { supabase, unwrap } from '../lib/supabase';
+import { add, get, saveScan, update } from '../lib/db';
+import { fileToScan } from '../lib/image';
 
 const BELTS = ['Ağ', 'Sarı', 'Narıncı', 'Yaşıl', 'Mavi', 'Qəhvəyi', 'Qara'];
-const MAX_SCAN = 5 * 1024 * 1024;
-const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' };
 
 const EMPTY = {
   first_name: '', last_name: '', father_name: '', birth_date: '', gender: '',
@@ -29,7 +28,7 @@ export default function ChildForm() {
 
   const { data: existing, loading, error, reload } = useQuery(async () => {
     if (!editing) return null;
-    return unwrap(await supabase.from('children').select('*').eq('id', id).single());
+    return get('children', id);
   }, [id]);
 
   useEffect(() => {
@@ -50,10 +49,7 @@ export default function ChildForm() {
     if (form.id_fin && !/^[A-Z0-9]{7}$/i.test(form.id_fin.trim())) return 'FİN 7 simvoldan ibarət olmalıdır.';
     if (form.parent_phone && !isValidPhone(form.parent_phone)) return 'Valideyn telefonunu düzgün yazın.';
     if (form.monthly_fee !== '' && Number(form.monthly_fee) < 0) return 'Aylıq ödəniş mənfi ola bilməz.';
-    if (file) {
-      if (!EXT[file.type]) return 'Skan yalnız JPG, PNG, WEBP və ya PDF ola bilər.';
-      if (file.size > MAX_SCAN) return 'Skan faylı 5 MB-dan çox olmamalıdır.';
-    }
+    if (file && !file.type.startsWith('image/')) return 'Skan üçün şəkil seçin (JPG, PNG və ya WEBP).';
     return '';
   };
 
@@ -84,22 +80,20 @@ export default function ChildForm() {
 
     setBusy(true);
     try {
-      const saved = editing
-        ? unwrap(await supabase.from('children').update(payload).eq('id', id).select('id').single())
-        : unwrap(await supabase.from('children').insert(payload).select('id').single());
+      let childId = id;
+      if (editing) await update('children', id, payload);
+      else childId = await add('children', { ...payload, has_scan: false });
 
       if (file) {
-        const path = `${saved.id}/${Date.now()}.${EXT[file.type]}`;
-        const { error: upError } = await supabase.storage.from('id-scans').upload(path, file, { contentType: file.type });
-        if (upError) {
-          notify('Məlumat saxlanıldı, lakin skan yüklənmədi: ' + upError.message, 'error');
-        } else {
-          unwrap(await supabase.from('children').update({ id_scan_path: path }).eq('id', saved.id).select('id').single());
-          if (existing?.id_scan_path) await supabase.storage.from('id-scans').remove([existing.id_scan_path]);
+        try {
+          await saveScan(childId, await fileToScan(file));
+          await update('children', childId, { has_scan: true });
+        } catch (scanError) {
+          notify('Məlumat saxlanıldı, lakin skan yüklənmədi: ' + scanError.message, 'error');
         }
       }
       notify(editing ? 'Dəyişikliklər saxlanıldı.' : 'Uşaq əlavə edildi.');
-      navigate(`/panel/usaqlar/${saved.id}`, { replace: true });
+      navigate(`/panel/usaqlar/${childId}`, { replace: true });
     } catch (err) {
       notify('Saxlanılmadı: ' + err.message, 'error');
     } finally {
@@ -152,10 +146,10 @@ export default function ChildForm() {
           </Field>
           <Field
             label="Vəsiqənin skanı və ya şəkli"
-            hint={existing?.id_scan_path ? 'Fayl yüklənib. Yenisini seçsəniz əvəz olunacaq.' : 'JPG, PNG, WEBP və ya PDF, ən çox 5 MB. Bağlı yerdə saxlanılır.'}
+            hint={existing?.has_scan ? 'Şəkil yüklənib. Yenisini seçsəniz əvəz olunacaq.' : 'Şəkil avtomatik kiçildilir. Yalnız admin görə bilər.'}
             wide
           >
-            <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
           </Field>
 
           <p className="form-section">Təhsil</p>

@@ -5,7 +5,7 @@ import { Empty, ErrorBox, Field, Icon, Loader, Modal, PageHead, useToast } from 
 import { calcAge, fmtDate, fullName } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
-import { supabase, unwrap } from '../lib/supabase';
+import { addMany, byName, eq, get, indexById, list, remove, removeWhere, update } from '../lib/db';
 
 const NO_CATEGORY = 'Kateqoriya təyin edilməyib';
 
@@ -36,12 +36,16 @@ function AddParticipants({ competitionId, kids, taken, onClose, onSaved }) {
       child_id,
       category: category.trim() || null,
     }));
-    const { error } = await supabase.from('competition_entries').insert(rows);
-    setBusy(false);
-    if (error) return notify('Əlavə edilmədi: ' + error.message, 'error');
-    notify(`${rows.length} uşaq əlavə edildi.`);
-    onSaved();
-    onClose();
+    try {
+      await addMany('competitionEntries', rows);
+      notify(`${rows.length} uşaq əlavə edildi.`);
+      onSaved();
+      onClose();
+    } catch (error) {
+      notify('Əlavə edilmədi: ' + error.message, 'error');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -91,19 +95,15 @@ export default function CompetitionDetail() {
   const [exporting, setExporting] = useState(false);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [competition, entries, kids] = await Promise.all([
-      supabase.from('competitions').select('*').eq('id', id).single(),
-      supabase
-        .from('competition_entries')
-        .select('id, category, result, children(id, first_name, last_name, birth_date, weight_kg)')
-        .eq('competition_id', id),
-      supabase
-        .from('children')
-        .select('id, first_name, last_name, birth_date, weight_kg, belt')
-        .eq('status', 'aktiv')
-        .order('last_name'),
+    const [competition, rawEntries, allKids] = await Promise.all([
+      get('competitions', id),
+      list('competitionEntries', eq('competition_id', id)),
+      list('children'),
     ]);
-    return { competition: unwrap(competition), entries: unwrap(entries), kids: unwrap(kids) };
+    const byId = indexById(allKids);
+    const entries = rawEntries.filter((e) => byId.has(e.child_id)).map((e) => ({ ...e, children: byId.get(e.child_id) }));
+    const kids = allKids.filter((k) => k.status === 'aktiv').sort(byName);
+    return { competition, entries, kids };
   }, [id]);
 
   const groups = useMemo(() => {
@@ -128,23 +128,33 @@ export default function CompetitionDetail() {
   const patch = async (entry, field, value) => {
     const next = value.trim() || null;
     if (next === (entry[field] || null)) return;
-    const { error: updateError } = await supabase.from('competition_entries').update({ [field]: next }).eq('id', entry.id);
-    if (updateError) return notify('Yenilənmədi: ' + updateError.message, 'error');
-    reload();
+    try {
+      await update('competitionEntries', entry.id, { [field]: next });
+      reload();
+    } catch (updateError) {
+      notify('Yenilənmədi: ' + updateError.message, 'error');
+    }
   };
 
   const removeEntry = async (entry) => {
     if (!window.confirm(`${fullName(entry.children)} yarışdan çıxarılsın?`)) return;
-    const { error: delError } = await supabase.from('competition_entries').delete().eq('id', entry.id);
-    if (delError) return notify('Silinmədi: ' + delError.message, 'error');
-    reload();
+    try {
+      await remove('competitionEntries', entry.id);
+      reload();
+    } catch (delError) {
+      notify('Silinmədi: ' + delError.message, 'error');
+    }
   };
 
   const removeCompetition = async () => {
     if (!window.confirm(`"${competition.name}" yarışı və iştirakçı siyahısı silinsin?`)) return;
-    const { error: delError } = await supabase.from('competitions').delete().eq('id', id);
-    if (delError) return notify('Silinmədi: ' + delError.message, 'error');
-    navigate('/panel/yarislar', { replace: true });
+    try {
+      await removeWhere('competitionEntries', 'competition_id', id);
+      await remove('competitions', id);
+      navigate('/panel/yarislar', { replace: true });
+    } catch (delError) {
+      notify('Silinmədi: ' + delError.message, 'error');
+    }
   };
 
   const exportPdf = async () => {

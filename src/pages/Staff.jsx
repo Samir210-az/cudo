@@ -3,7 +3,7 @@ import { Empty, ErrorBox, Field, Icon, Loader, Modal, MonthPicker, PageHead, Sta
 import { sum } from '../lib/finance';
 import { currentPeriod, fmtDate, fmtMoney, formatPhone, isValidPhone, normalizePhone, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { supabase, unwrap } from '../lib/supabase';
+import { add, eq, exists, indexById, list, remove, update } from '../lib/db';
 
 const ROLES = ['Məşqçi', 'Baş məşqçi', 'Köməkçi məşqçi', 'Təmizlikçi', 'Digər'];
 
@@ -31,15 +31,17 @@ function StaffModal({ person, onClose, onSaved }) {
       active: form.active,
     };
     setBusy(true);
-    const query = person
-      ? supabase.from('staff').update(payload).eq('id', person.id)
-      : supabase.from('staff').insert(payload);
-    const { error } = await query;
-    setBusy(false);
-    if (error) return notify('Saxlanılmadı: ' + error.message, 'error');
-    notify('İşçi saxlanıldı.');
-    onSaved();
-    onClose();
+    try {
+      if (person) await update('staff', person.id, payload);
+      else await add('staff', payload);
+      notify('İşçi saxlanıldı.');
+      onSaved();
+      onClose();
+    } catch (error) {
+      notify('Saxlanılmadı: ' + error.message, 'error');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -92,18 +94,22 @@ function SalaryModal({ staff, preset, period, onClose, onSaved }) {
     if (!staffId) return notify('İşçini seçin.', 'error');
     if (!(Number(amount) > 0)) return notify('Məbləğ sıfırdan böyük olmalıdır.', 'error');
     setBusy(true);
-    const { error } = await supabase.from('salary_payments').insert({
-      staff_id: staffId,
-      amount: Number(amount),
-      period_month: `${month}-01`,
-      paid_on: paidOn,
-      note: note.trim() || null,
-    });
-    setBusy(false);
-    if (error) return notify('Ödəniş saxlanılmadı: ' + error.message, 'error');
-    notify('Əmək haqqı qeyd edildi.');
-    onSaved();
-    onClose();
+    try {
+      await add('salaryPayments', {
+        staff_id: staffId,
+        amount: Number(amount),
+        period_month: `${month}-01`,
+        paid_on: paidOn,
+        note: note.trim() || null,
+      });
+      notify('Əmək haqqı qeyd edildi.');
+      onSaved();
+      onClose();
+    } catch (error) {
+      notify('Ödəniş saxlanılmadı: ' + error.message, 'error');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -143,12 +149,13 @@ export default function Staff() {
   const [paying, setPaying] = useState(null);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [staff, salaries] = (
-      await Promise.all([
-        supabase.from('staff').select('*').order('active', { ascending: false }).order('full_name'),
-        supabase.from('salary_payments').select('*, staff(full_name)').eq('period_month', period).order('paid_on', { ascending: false }),
-      ])
-    ).map(unwrap);
+    const [staff, rawSalaries] = await Promise.all([list('staff'), list('salaryPayments', eq('period_month', period))]);
+    staff.sort((a, b) => Number(b.active) - Number(a.active) || a.full_name.localeCompare(b.full_name, 'az'));
+    const byId = indexById(staff);
+    const salaries = rawSalaries
+      .filter((s) => byId.has(s.staff_id))
+      .map((s) => ({ ...s, staff: byId.get(s.staff_id) }))
+      .sort((a, b) => b.paid_on.localeCompare(a.paid_on));
     return { staff, salaries };
   }, [period]);
 
@@ -161,23 +168,25 @@ export default function Staff() {
 
   const removeSalary = async (s) => {
     if (!window.confirm('Bu ödəniş qeydi silinsin?')) return;
-    const { error: delError } = await supabase.from('salary_payments').delete().eq('id', s.id);
-    if (delError) return notify('Silinmədi: ' + delError.message, 'error');
-    reload();
+    try {
+      await remove('salaryPayments', s.id);
+      reload();
+    } catch (delError) {
+      notify('Silinmədi: ' + delError.message, 'error');
+    }
   };
 
   const removePerson = async (person) => {
     if (!window.confirm(`${person.full_name} silinsin?`)) return;
-    const { error: delError } = await supabase.from('staff').delete().eq('id', person.id);
-    if (delError) {
-      return notify(
-        delError.code === '23503'
-          ? 'Əmək haqqı tarixçəsi olan işçini silmək olmaz. Redaktədən "Hazırda işləyir" işarəsini çıxarın.'
-          : 'Silinmədi: ' + delError.message,
-        'error',
-      );
+    try {
+      if (await exists('salaryPayments', 'staff_id', person.id)) {
+        return notify('Əmək haqqı tarixçəsi olan işçini silmək olmaz. Redaktədən "Hazırda işləyir" işarəsini çıxarın.', 'error');
+      }
+      await remove('staff', person.id);
+      reload();
+    } catch (delError) {
+      notify('Silinmədi: ' + delError.message, 'error');
     }
-    reload();
   };
 
   return (

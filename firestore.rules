@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admin hesabının emaili: telefon nömrəsi + @cudo-klub.vercel.app
+    // Yeni admin əlavə etmək üçün siyahıya vergüllə yeni email yazın.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['ADMIN_TELEFON@cudo-klub.vercel.app'];
+    }
+
+    // İctimai saytda göstərilən klub məlumatı hamıya açıqdır
+    match /settings/club {
+      allow read: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

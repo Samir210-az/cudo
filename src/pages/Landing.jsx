@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../components/ui';
 import { useQuery } from '../lib/hooks';
-import { configured, supabase } from '../lib/supabase';
+import { getSettings } from '../lib/db';
+import { configured } from '../lib/firebase';
 import { formatPhone, normalizePhone } from '../lib/format';
 
 const HERO =
@@ -44,8 +45,11 @@ function Section({ title, children }) {
 export default function Landing() {
   const { data: settings } = useQuery(async () => {
     if (!configured) return null;
-    const { data } = await supabase.from('club_settings').select('*').eq('id', 1).maybeSingle();
-    return data;
+    try {
+      return await getSettings();
+    } catch {
+      return null;
+    }
   });
 
   const name = settings?.club_name || 'Cüdo Klub';

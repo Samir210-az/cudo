@@ -77,13 +77,13 @@ export function Loader() {
 
 export function ErrorBox({ error, onRetry }) {
   const raw = error?.message || String(error);
-  const missing = /relation .* does not exist|schema cache|Could not find the table/i.test(raw);
+  const denied = error?.code === 'permission-denied' || /insufficient permissions/i.test(raw);
   return (
     <div className="notice error" role="alert">
-      <strong>{missing ? 'Verilənlər bazası hazır deyil.' : 'Xəta baş verdi.'}</strong>
+      <strong>{denied ? 'Giriş icazəsi yoxdur.' : 'Xəta baş verdi.'}</strong>
       <p>
-        {missing
-          ? 'supabase/schema.sql faylını Supabase SQL Editor-də işə salın.'
+        {denied
+          ? 'Firestore qaydalarında (firestore.rules) admin emailinin düzgün yazıldığını yoxlayın.'
           : raw}
       </p>
       {onRetry && (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import { configured } from '../lib/supabase';
+import { configured } from '../lib/firebase';
 import { isValidPhone } from '../lib/format';
 
 export default function Login() {
@@ -68,7 +68,7 @@ export default function Login() {
         {!configured && (
           <div className="notice error" role="alert" style={{ marginTop: 14 }}>
             <strong>Verilənlər bazası qoşulmayıb.</strong>
-            <p>VITE_SUPABASE_URL və VITE_SUPABASE_ANON_KEY təyin edilməlidir.</p>
+            <p>VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID və VITE_FIREBASE_APP_ID təyin edilməlidir.</p>
           </div>
         )}
         <form onSubmit={submit}>

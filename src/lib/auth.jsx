@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { supabase, phoneToEmail } from './supabase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import { auth, phoneToEmail } from './firebase';
 
 const AuthContext = createContext(null);
 
@@ -7,29 +8,27 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined);
 
   useEffect(() => {
-    if (!supabase) {
+    if (!auth) {
       setSession(null);
       return undefined;
     }
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
-    return () => data.subscription.unsubscribe();
+    return onAuthStateChanged(auth, (user) => setSession(user ? { user } : null));
   }, []);
 
   const value = useMemo(
     () => ({
       session,
       async signIn(phone, pin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: phoneToEmail(phone),
-          password: pin,
-        });
-        if (error) {
-          if (error.status === 429) throw new Error('Çox cəhd edildi. Bir neçə dəqiqə gözləyin.');
+        try {
+          await signInWithEmailAndPassword(auth, phoneToEmail(phone), pin);
+        } catch (error) {
+          if (error.code === 'auth/too-many-requests') {
+            throw new Error('Çox cəhd edildi. Bir neçə dəqiqə gözləyin.');
+          }
           throw new Error('Telefon nömrəsi və ya PİN yanlışdır.');
         }
       },
-      signOut: () => supabase.auth.signOut(),
+      signOut: () => firebaseSignOut(auth),
     }),
     [session],
   );

@@ -5,7 +5,7 @@ import PaymentModal from '../components/PaymentModal';
 import { computeDebts, onlyDebtors, sum } from '../lib/finance';
 import { addMonths, currentPeriod, fmtDate, fmtMoney, fmtPeriod, fullName, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { supabase, unwrap } from '../lib/supabase';
+import { eq, list, range, where } from '../lib/db';
 
 export default function Dashboard() {
   const period = currentPeriod();
@@ -13,21 +13,21 @@ export default function Dashboard() {
   const [paying, setPaying] = useState(null);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [kids, duePayments, cashIn, expenses, salaries, competitions] = (
-      await Promise.all([
-        supabase.from('children').select('id, first_name, last_name, monthly_fee, joined_at, status').eq('status', 'aktiv'),
-        supabase.from('payments').select('child_id, amount, period_month').eq('period_month', period),
-        supabase.from('payments').select('amount').gte('paid_on', period).lt('paid_on', next),
-        supabase.from('expenses').select('amount').gte('spent_on', period).lt('spent_on', next),
-        supabase.from('salary_payments').select('amount').gte('paid_on', period).lt('paid_on', next),
-        supabase
-          .from('competitions')
-          .select('id, name, held_on, location, competition_entries(count)')
-          .gte('held_on', todayISO())
-          .order('held_on')
-          .limit(3),
-      ])
-    ).map(unwrap);
+    const [kids, duePayments, cashIn, expenses, salaries, upcoming, entries] = await Promise.all([
+      list('children', eq('status', 'aktiv')),
+      list('payments', eq('period_month', period)),
+      list('payments', ...range('paid_on', period, next)),
+      list('expenses', ...range('spent_on', period, next)),
+      list('salaryPayments', ...range('paid_on', period, next)),
+      list('competitions', where('held_on', '>=', todayISO())),
+      list('competitionEntries'),
+    ]);
+    const counts = new Map();
+    entries.forEach((e) => counts.set(e.competition_id, (counts.get(e.competition_id) || 0) + 1));
+    const competitions = upcoming
+      .sort((a, b) => a.held_on.localeCompare(b.held_on))
+      .slice(0, 3)
+      .map((c) => ({ ...c, count: counts.get(c.id) || 0 }));
     return { kids, duePayments, cashIn, expenses, salaries, competitions };
   }, []);
 
@@ -109,7 +109,7 @@ export default function Dashboard() {
                       {c.location ? ` · ${c.location}` : ''}
                     </div>
                   </div>
-                  <span className="badge">{c.competition_entries[0]?.count || 0} nəfər</span>
+                  <span className="badge">{c.count} nəfər</span>
                 </Link>
               ))}
             </div>
