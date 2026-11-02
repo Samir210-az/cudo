@@ -78,3 +78,8 @@ export function formatPhone(value) {
 }
 
 export const gradeLabel = (g) => (g === 0 ? 'Məktəbəqədər' : g ? `${g}-ci sinif` : '—');
+
+const WEEKDAYS = ['Bazar', 'Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'];
+
+export const fmtLongDate = (date = new Date()) =>
+  `${WEEKDAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()].toLocaleLowerCase('az')} ${date.getFullYear()}`;

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, Stat } from '../components/ui';
 import PaymentModal from '../components/PaymentModal';
 import { computeDebts, onlyDebtors, sum } from '../lib/finance';
-import { addMonths, currentPeriod, fmtDate, fmtMoney, fmtPeriod, fullName, todayISO } from '../lib/format';
+import { addMonths, currentPeriod, fmtDate, fmtLongDate, fmtMoney, fmtPeriod, fullName, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { eq, list, range, where } from '../lib/db';
 
@@ -50,6 +50,16 @@ export default function Dashboard() {
           Ödəniş qəbul et
         </button>
       </PageHead>
+
+      <section className="today">
+        <div>
+          <span className="eyebrow">Bu gün</span>
+          <strong>{fmtLongDate()}</strong>
+        </div>
+        <Link to="/panel/davamiyyet" className="btn primary">
+          <Icon name="check" /> Davamiyyəti işarələ
+        </Link>
+      </section>
 
       <div className="grid stats">
         <Stat label="Aktiv uşaq" value={data.kids.length} />

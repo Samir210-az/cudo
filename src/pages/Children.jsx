@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components/ui';
 import { calcAge, fullName, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { fetchSettings, initials } from '../lib/settings';
+import { avatarTone, fetchSettings, initials } from '../lib/settings';
 import { byName, list } from '../lib/db';
 
 export default function Children() {
@@ -74,7 +74,7 @@ export default function Children() {
           <div className="list">
             {filtered.map((c) => (
               <Link className="row" key={c.id} to={`/panel/usaqlar/${c.id}`}>
-                <span className="avatar" aria-hidden="true">{initials(c)}</span>
+                <span className={`avatar ${avatarTone(c)}`} aria-hidden="true">{initials(c)}</span>
                 <div className="row-main">
                   <div className="row-title">{fullName(c)}</div>
                   <div className="row-sub">
