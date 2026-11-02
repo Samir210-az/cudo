@@ -6,6 +6,7 @@ import { Icon, Loader } from './ui';
 const MAIN_NAV = [
   { to: '/panel', label: 'Panel', icon: 'home', end: true },
   { to: '/panel/usaqlar', label: 'Uşaqlar', icon: 'users' },
+  { to: '/panel/davamiyyet', label: 'Davamiyyət', icon: 'check' },
   { to: '/panel/yarislar', label: 'Yarışlar', icon: 'trophy' },
   { to: '/panel/maliyye', label: 'Maliyyə', icon: 'wallet' },
 ];

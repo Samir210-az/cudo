@@ -9,6 +9,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Children = lazy(() => import('./pages/Children'));
 const ChildForm = lazy(() => import('./pages/ChildForm'));
 const ChildCard = lazy(() => import('./pages/ChildCard'));
+const Attendance = lazy(() => import('./pages/Attendance'));
 const Competitions = lazy(() => import('./pages/Competitions'));
 const CompetitionDetail = lazy(() => import('./pages/CompetitionDetail'));
 const Finance = lazy(() => import('./pages/Finance'));
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="usaqlar/yeni" element={<ChildForm />} />
           <Route path="usaqlar/:id" element={<ChildCard />} />
           <Route path="usaqlar/:id/redakte" element={<ChildForm />} />
+          <Route path="davamiyyet" element={<Attendance />} />
           <Route path="yarislar" element={<Competitions />} />
           <Route path="yarislar/:id" element={<CompetitionDetail />} />
           <Route path="maliyye" element={<Finance />} />
