@@ -138,8 +138,7 @@ export default function Landing() {
         <div className="site-nav">
           <div className="site-nav-inner">
             <button type="button" className="logo-btn nav-brand" onClick={tapNavLogo} aria-label={name}>
-              <img src="/logo-128.webp" alt="" width="34" height="42" />
-              <span>{name}</span>
+              {name}
             </button>
             <nav className="site-nav-links" aria-label="Səhifə bölmələri">
               <a href="#cudo">Cüdo</a>
