@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/ui';
 import { getSettings } from '../lib/db';
 import { configured } from '../lib/firebase';
 import { formatPhone, normalizePhone } from '../lib/format';
 import { useQuery } from '../lib/hooks';
+import { useSecretTaps } from '../lib/useSecretTaps';
 
 const photo = (id, width) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=70&w=${width}`;
@@ -94,8 +95,12 @@ const hideBroken = (e) => {
 };
 
 export default function Landing() {
+  const navigate = useNavigate();
   const heroMedia = useRef(null);
   useParallax(heroMedia);
+  const unlock = () => navigate('/giris');
+  const tapNavLogo = useSecretTaps(unlock);
+  const tapHeroLogo = useSecretTaps(unlock);
 
   const { data: settings } = useQuery(async () => {
     if (!configured) return null;
@@ -109,7 +114,8 @@ export default function Landing() {
   const name = settings?.club_name || 'Cüdo Klub';
   const phone = settings?.phone ? normalizePhone(settings.phone) : '';
   const whatsapp = settings?.whatsapp ? normalizePhone(settings.whatsapp) : '';
-  const hasInfo = Boolean(settings?.about || settings?.schedule);
+  const scheduleLines = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
+  const hasInfo = Boolean(settings?.about || scheduleLines.length);
   const hasContact = Boolean(settings?.address || phone);
 
   useEffect(() => {
@@ -131,21 +137,22 @@ export default function Landing() {
 
         <div className="site-nav">
           <div className="site-nav-inner">
-            <strong className="nav-brand">
-              <span className="brand-mark" aria-hidden="true" /> {name}
-            </strong>
+            <button type="button" className="logo-btn nav-brand" onClick={tapNavLogo} aria-label={name}>
+              <img src="/logo-128.webp" alt="" width="34" height="42" />
+              <span>{name}</span>
+            </button>
             <nav className="site-nav-links" aria-label="Səhifə bölmələri">
               <a href="#cudo">Cüdo</a>
               {hasInfo && <a href="#melumat">Cədvəl</a>}
               {hasContact && <a href="#elaqe">Əlaqə</a>}
             </nav>
-            <Link to="/giris" className="nav-login">
-              Admin girişi
-            </Link>
           </div>
         </div>
 
         <div className="hero-inner">
+          <button type="button" className="logo-btn hero-logo" onClick={tapHeroLogo} aria-label={name}>
+            <img src="/logo-512.webp" alt="" width="512" height="627" />
+          </button>
           <span className="kicker">Uşaq və yeniyetmələr üçün</span>
           <h1>{name}</h1>
           <p>{settings?.tagline || 'Cüdo məşqləri: güc, çeviklik və özünə inam.'}</p>
@@ -167,13 +174,13 @@ export default function Landing() {
         </div>
       </header>
 
-      <Band id="cudo" title="Cüdo nədir">
+      <Band id="cudo" tone="sky" title="Cüdo nədir">
         <p className="lead">
           Cüdo 1882-ci ildə Yaponiyada Cigoro Kano tərəfindən yaradılıb və 1964-cü ildən Olimpiya oyunlarının proqramındadır.
         </p>
         <div className="tiles">
           {TILES.map((tile, i) => (
-            <article className="tile" key={tile.title}>
+            <article className={`tile tile-${i + 1}`} key={tile.title}>
               <span className="tile-num">{String(i + 1).padStart(2, '0')}</span>
               <h3>{tile.title}</h3>
               <p>{tile.text}</p>
@@ -183,12 +190,18 @@ export default function Landing() {
       </Band>
 
       {hasInfo && (
-        <Band id="melumat" tone="dark" title={settings.schedule ? 'Məşq cədvəli' : 'Klub haqqında'}>
+        <Band id="melumat" tone="dark" title={scheduleLines.length ? 'Məşq cədvəli' : 'Klub haqqında'}>
           <div className="split">
-            {settings.schedule && <p className="schedule">{settings.schedule}</p>}
+            {scheduleLines.length > 0 && (
+              <ul className="schedule">
+                {scheduleLines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            )}
             {settings.about && (
               <div>
-                {settings.schedule && <h3 className="sub">Klub haqqında</h3>}
+                {scheduleLines.length > 0 && <h3 className="sub">Klub haqqında</h3>}
                 <p className="prose">{settings.about}</p>
               </div>
             )}
@@ -196,7 +209,7 @@ export default function Landing() {
         </Band>
       )}
 
-      <Band id="qalereya" tone="soft" title="Matın üzərində">
+      <Band id="qalereya" tone="gold" title="Matın üzərində">
         <div className="gallery">
           {GALLERY.map((item) => (
             <figure key={item.id}>
@@ -214,7 +227,7 @@ export default function Landing() {
       </Band>
 
       {hasContact && (
-        <Band id="elaqe" tone="dark" title="Əlaqə">
+        <Band id="elaqe" tone="red" title="Əlaqə">
           <div className="contact">
             {phone && (
               <a className="contact-phone" href={`tel:+994${phone.slice(1)}`}>
