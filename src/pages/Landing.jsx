@@ -7,14 +7,17 @@ import { formatPhone, normalizePhone } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { useSecretTaps } from '../lib/useSecretTaps';
 
-const photo = (id, width) =>
+const unsplash = (id, width) =>
   `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=70&w=${width}`;
+const pexels = (id, width) =>
+  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
 
 const HERO = '1785005845398-4e6af1243f05';
+
 const GALLERY = [
-  { id: '1782849159378-a068078370bf', alt: 'İki cüdoçu rəngli matın üzərində güləşir' },
-  { id: '1656653121475-e33829581294', alt: 'Ağ kimonoda cüdoçu qara kəmərini bağlayır' },
-  { id: HERO, alt: 'Cüdoçu zalda atma texnikasını yerinə yetirir' },
+  { src: (w) => pexels(6765015, w), alt: 'İki uşaq dojoda cüdo məşqi edir' },
+  { src: (w) => pexels(6765024, w), alt: 'Cüdoçu rəqibini atma texnikası ilə yerə yıxır' },
+  { src: (w) => unsplash('1782849159378-a068078370bf', w), alt: 'İki cüdoçu rəngli matın üzərində güləşir' },
 ];
 
 const TILES = [
@@ -27,10 +30,13 @@ const TILES = [
     text: 'Hər kəmər dərəcəsi imtahanla qazanılır. Uşaq öz irəliləyişini gözlə görür və növbəti hədəfi bilir.',
   },
   {
-    title: 'Yarışlar',
-    text: 'Klubun şagirdləri turnirlərdə iştirak edir. Yarışlarda uşaqlar çəki kateqoriyalarına görə eyni çəkidə rəqiblərlə qarşılaşır.',
+    title: 'Çəki kateqoriyaları',
+    text: 'Cüdo yarışlarında uşaqlar çəkiyə görə kateqoriyalara bölünür və eyni çəkidə rəqiblərlə qarşılaşır.',
   },
 ];
+
+const DEFAULT_SCHEDULE = ['Bazar ertəsi', 'Çərşənbə', 'Cümə'];
+const DEFAULT_ABOUT = 'Məşqlər peşəkar məşqçilər tərəfindən keçirilir.';
 
 function useReveal() {
   const ref = useRef(null);
@@ -55,26 +61,52 @@ function useReveal() {
   return ref;
 }
 
-function useParallax(ref) {
+function useParallax(wrapRef, mediaRef, { factor = 0.22, centered = false } = {}) {
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return undefined;
-    const query = window.matchMedia('(min-width: 900px) and (prefers-reduced-motion: no-preference)');
+    const wrap = wrapRef.current;
+    const media = mediaRef.current;
+    if (!wrap || !media) return undefined;
+    const motionOk = window.matchMedia('(prefers-reduced-motion: no-preference)');
     let frame = 0;
     const update = () => {
       frame = 0;
-      el.style.transform = query.matches ? `translate3d(0, ${Math.min(window.scrollY, 900) * 0.22}px, 0)` : '';
+      if (!motionOk.matches) {
+        media.style.transform = '';
+        return;
+      }
+      const rect = wrap.getBoundingClientRect();
+      const viewport = window.innerHeight;
+      if (rect.bottom < -50 || rect.top > viewport + 50) return;
+      const wide = window.innerWidth >= 900;
+      if (centered) {
+        const progress = (rect.top + rect.height / 2 - viewport / 2) / viewport;
+        media.style.transform = `translate3d(0, ${(-progress * (wide ? 90 : 40)).toFixed(1)}px, 0)`;
+      } else if (wide) {
+        media.style.transform = `translate3d(0, ${Math.min(window.scrollY, 900) * factor}px, 0)`;
+      } else {
+        media.style.transform = '';
+      }
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
     update();
     return () => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
       cancelAnimationFrame(frame);
     };
-  }, [ref]);
+  }, [wrapRef, mediaRef, factor, centered]);
+}
+
+function Logo({ height }) {
+  return (
+    <span className="logo-wrap" style={{ height }}>
+      <img src="/logo-128.webp" alt="" width={Math.round(height * 0.817)} height={height} />
+    </span>
+  );
 }
 
 function Band({ id, tone = 'light', title, children }) {
@@ -89,6 +121,18 @@ function Band({ id, tone = 'light', title, children }) {
   );
 }
 
+function PhotoBand({ src, srcSet, children }) {
+  const wrap = useRef(null);
+  const media = useRef(null);
+  useParallax(wrap, media, { centered: true });
+  return (
+    <section className="photo-band" ref={wrap}>
+      <img ref={media} src={src} srcSet={srcSet} sizes="100vw" alt="" loading="lazy" />
+      <div className="photo-band-text">{children}</div>
+    </section>
+  );
+}
+
 const hideBroken = (e) => {
   const figure = e.currentTarget.closest('figure');
   if (figure) figure.style.display = 'none';
@@ -96,11 +140,10 @@ const hideBroken = (e) => {
 
 export default function Landing() {
   const navigate = useNavigate();
+  const heroWrap = useRef(null);
   const heroMedia = useRef(null);
-  useParallax(heroMedia);
-  const unlock = () => navigate('/giris');
-  const tapNavLogo = useSecretTaps(unlock);
-  const tapHeroLogo = useSecretTaps(unlock);
+  useParallax(heroWrap, heroMedia);
+  const tapLogo = useSecretTaps(() => navigate('/giris'));
 
   const { data: settings } = useQuery(async () => {
     if (!configured) return null;
@@ -114,8 +157,9 @@ export default function Landing() {
   const name = settings?.club_name || 'Cüdo Klub';
   const phone = settings?.phone ? normalizePhone(settings.phone) : '';
   const whatsapp = settings?.whatsapp ? normalizePhone(settings.whatsapp) : '';
-  const scheduleLines = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
-  const hasInfo = Boolean(settings?.about || scheduleLines.length);
+  const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
+  const scheduleLines = savedSchedule.length ? savedSchedule : DEFAULT_SCHEDULE;
+  const about = settings?.about || DEFAULT_ABOUT;
   const hasContact = Boolean(settings?.address || phone);
 
   useEffect(() => {
@@ -124,11 +168,11 @@ export default function Landing() {
 
   return (
     <div className="site">
-      <header className="hero">
+      <header className="hero" ref={heroWrap}>
         <div className="hero-media" ref={heroMedia} aria-hidden="true">
           <img
-            src={photo(HERO, 1600)}
-            srcSet={`${photo(HERO, 800)} 800w, ${photo(HERO, 1280)} 1280w, ${photo(HERO, 1920)} 1920w`}
+            src={unsplash(HERO, 1600)}
+            srcSet={`${unsplash(HERO, 800)} 800w, ${unsplash(HERO, 1280)} 1280w, ${unsplash(HERO, 1920)} 1920w`}
             sizes="100vw"
             alt=""
             fetchPriority="high"
@@ -137,24 +181,22 @@ export default function Landing() {
 
         <div className="site-nav">
           <div className="site-nav-inner">
-            <button type="button" className="logo-btn nav-brand" onClick={tapNavLogo} aria-label={name}>
-              {name}
+            <button type="button" className="logo-btn nav-brand" onClick={tapLogo} aria-label={name}>
+              <Logo height={54} />
+              <span>{name}</span>
             </button>
             <nav className="site-nav-links" aria-label="Səhifə bölmələri">
               <a href="#cudo">Cüdo</a>
-              {hasInfo && <a href="#melumat">Cədvəl</a>}
+              <a href="#melumat">Məşqlər</a>
               {hasContact && <a href="#elaqe">Əlaqə</a>}
             </nav>
           </div>
         </div>
 
         <div className="hero-inner">
-          <button type="button" className="logo-btn hero-logo" onClick={tapHeroLogo} aria-label={name}>
-            <img src="/logo-512.webp" alt="" width="512" height="627" />
-          </button>
           <span className="kicker">Uşaq və yeniyetmələr üçün</span>
           <h1>{name}</h1>
-          <p>{settings?.tagline || 'Cüdo məşqləri: güc, çeviklik və özünə inam.'}</p>
+          <p>{settings?.tagline || 'Güc, çeviklik və özünə inam.'}</p>
           <div className="hero-actions">
             {phone && (
               <a className="btn primary" href={`tel:+994${phone.slice(1)}`}>
@@ -166,9 +208,6 @@ export default function Landing() {
                 WhatsApp
               </a>
             )}
-            <a className="btn" href="#cudo">
-              Cüdo haqqında
-            </a>
           </div>
         </div>
       </header>
@@ -188,33 +227,33 @@ export default function Landing() {
         </div>
       </Band>
 
-      {hasInfo && (
-        <Band id="melumat" tone="dark" title={scheduleLines.length ? 'Məşq cədvəli' : 'Klub haqqında'}>
-          <div className="split">
-            {scheduleLines.length > 0 && (
-              <ul className="schedule">
-                {scheduleLines.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            )}
-            {settings.about && (
-              <div>
-                {scheduleLines.length > 0 && <h3 className="sub">Klub haqqında</h3>}
-                <p className="prose">{settings.about}</p>
-              </div>
-            )}
+      <PhotoBand src={pexels(6765030, 1600)} srcSet={`${pexels(6765030, 800)} 800w, ${pexels(6765030, 1600)} 1600w`}>
+        <p className="band-quote">
+          <span>Güc.</span> <span className="q2">Çeviklik.</span> <span className="q3">Özünə inam.</span>
+        </p>
+      </PhotoBand>
+
+      <Band id="melumat" tone="dark" title="Məşqlər">
+        <div className="split">
+          <ul className="schedule">
+            {scheduleLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+          <div>
+            <h3 className="sub">Klub haqqında</h3>
+            <p className="prose">{about}</p>
           </div>
-        </Band>
-      )}
+        </div>
+      </Band>
 
       <Band id="qalereya" tone="gold" title="Matın üzərində">
         <div className="gallery">
           {GALLERY.map((item) => (
-            <figure key={item.id}>
+            <figure key={item.alt}>
               <img
-                src={photo(item.id, 900)}
-                srcSet={`${photo(item.id, 600)} 600w, ${photo(item.id, 900)} 900w, ${photo(item.id, 1400)} 1400w`}
+                src={item.src(900)}
+                srcSet={`${item.src(600)} 600w, ${item.src(900)} 900w, ${item.src(1400)} 1400w`}
                 sizes="(min-width: 800px) 33vw, 100vw"
                 alt={item.alt}
                 loading="lazy"
@@ -224,6 +263,15 @@ export default function Landing() {
           ))}
         </div>
       </Band>
+
+      <PhotoBand
+        src={unsplash('1656653121475-e33829581294', 1600)}
+        srcSet={`${unsplash('1656653121475-e33829581294', 800)} 800w, ${unsplash('1656653121475-e33829581294', 1600)} 1600w`}
+      >
+        <p className="band-quote">
+          Sən də <span className="q2">matın üzərinə</span> <span className="q3">çıx.</span>
+        </p>
+      </PhotoBand>
 
       {hasContact && (
         <Band id="elaqe" tone="red" title="Əlaqə">
@@ -248,6 +296,7 @@ export default function Landing() {
       )}
 
       <footer className="site-foot">
+        <Logo height={72} />
         <a href="https://aze-ai.az" target="_blank" rel="noopener noreferrer">
           By securtiy_group
         </a>
