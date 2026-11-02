@@ -7,7 +7,8 @@ import {
   addMonths, calcAge, currentPeriod, fmtDate, fmtMoney, fmtPeriod, formatPhone, fullName, gradeLabel, trainingDuration,
 } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { fetchSettings } from '../lib/settings';
+import { beltStyle } from '../lib/belts';
+import { avatarTone, fetchSettings, initials } from '../lib/settings';
 import { eq, exists, get, getScan, indexById, list, remove, removeScan, removeWhere } from '../lib/db';
 
 function Info({ label, children }) {
@@ -55,6 +56,7 @@ export default function ChildCard() {
   if (loading && !data) return <Loader />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
   const { child, entries, payments, attendance } = data;
+  const belt = beltStyle(child.belt);
 
   const openScan = async () => {
     try {
@@ -109,6 +111,16 @@ export default function ChildCard() {
           <Icon name="edit" /> Redaktə
         </Link>
       </PageHead>
+
+      <section className="profile" style={{ '--belt': belt?.stripe }}>
+        <span className={`avatar lg ${avatarTone(child)}`} aria-hidden="true">{initials(child)}</span>
+        <div className="chips">
+          <span className="chip">{calcAge(child.birth_date)} yaş</span>
+          {belt && <span className="chip" style={{ background: belt.bg, color: belt.fg }}>{belt.name} kəmər</span>}
+          <span className="chip">{trainingDuration(child.joined_at)} məşğul olur</span>
+          {child.grade !== null && child.grade !== undefined && <span className="chip">{gradeLabel(child.grade)}</span>}
+        </div>
+      </section>
 
       <div className="stack">
         <section className="card">

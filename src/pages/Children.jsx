@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components/ui';
 import { calcAge, fullName, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
+import { beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
 import { byName, list } from '../lib/db';
 
@@ -72,8 +73,10 @@ export default function Children() {
 
         {filtered.length ? (
           <div className="list">
-            {filtered.map((c) => (
-              <Link className="row" key={c.id} to={`/panel/usaqlar/${c.id}`}>
+            {filtered.map((c) => {
+              const belt = beltStyle(c.belt);
+              return (
+              <Link className="row belted" key={c.id} to={`/panel/usaqlar/${c.id}`} style={{ '--belt': belt?.stripe }}>
                 <span className={`avatar ${avatarTone(c)}`} aria-hidden="true">{initials(c)}</span>
                 <div className="row-main">
                   <div className="row-title">{fullName(c)}</div>
@@ -82,9 +85,14 @@ export default function Children() {
                     {c.school ? `, ${c.school}` : ''} · {trainingDuration(c.joined_at)}
                   </div>
                 </div>
-                {c.status === 'passiv' ? <span className="badge warn">Passiv</span> : c.belt && <span className="badge">{c.belt}</span>}
+                {c.status === 'passiv' ? (
+                  <span className="badge warn">Passiv</span>
+                ) : (
+                  belt && <span className="badge" style={{ background: belt.bg, color: belt.fg, border: '1px solid rgba(0,0,0,0.12)' }}>{belt.name}</span>
+                )}
               </Link>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <Empty>

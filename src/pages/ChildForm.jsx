@@ -4,9 +4,9 @@ import { ErrorBox, Field, Icon, Loader, PageHead, useToast } from '../components
 import { calcAge, isValidPhone, normalizePhone, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { add, get, removeScan, saveScan, update } from '../lib/db';
+import { BELTS } from '../lib/belts';
 import { fileToScan } from '../lib/image';
 
-const BELTS = ['Ağ', 'Sarı', 'Narıncı', 'Yaşıl', 'Mavi', 'Qəhvəyi', 'Qara'];
 
 const EMPTY = {
   first_name: '', last_name: '', father_name: '', birth_date: '', gender: '',
@@ -194,7 +194,7 @@ export default function ChildForm() {
           <Field label="Kəmər">
             <select value={form.belt} onChange={set('belt')}>
               <option value="">Təyin edilməyib</option>
-              {BELTS.map((b) => <option key={b}>{b}</option>)}
+              {BELTS.map((b) => <option key={b.name}>{b.name}</option>)}
             </select>
           </Field>
           <Field label="Çəki (kq)">
