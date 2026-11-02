@@ -1,0 +1,18 @@
+{
+  "id": "/panel",
+  "name": "Cüdo Klub — idarəetmə",
+  "short_name": "Cüdo Klub",
+  "description": "Cüdo klubu idarəetmə paneli: uşaqlar, davamiyyət, yarışlar, ödənişlər.",
+  "start_url": "/panel",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "az",
+  "background_color": "#0e1a2b",
+  "theme_color": "#0e1a2b",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
