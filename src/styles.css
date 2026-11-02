@@ -322,6 +322,10 @@ a.row:hover, label.row:hover { background: #f3f6fc; }
 .band-quote .q2 { color: var(--gold); }
 .band-quote .q3 { color: #ff6b81; }
 
+.install-row { display: grid; margin-top: 14px; }
+.install-row .btn { width: 100%; }
+.howto { margin: 4px 0 0; padding-left: 22px; display: grid; gap: 10px; font-size: 1.02rem; line-height: 1.5; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }

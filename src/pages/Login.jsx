@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
+import InstallButton from '../components/InstallButton';
 import { useAuth } from '../lib/auth';
 import { configured } from '../lib/firebase';
 import { isValidPhone } from '../lib/format';
@@ -101,6 +102,9 @@ export default function Login() {
             {busy ? 'Yoxlanılır…' : 'Daxil ol'}
           </button>
         </form>
+        <div className="install-row">
+          <InstallButton className="btn" />
+        </div>
         <Link to="/" className="back">
           Sayta qayıt
         </Link>

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import InstallButton from './InstallButton';
 import { Icon, Loader } from './ui';
 
 const MAIN_NAV = [
@@ -54,6 +55,7 @@ export default function AdminLayout() {
           ))}
         </nav>
         <div className="sidebar-foot">
+          <InstallButton className="nav-link" />
           <NavLink to="/" className="nav-link">
             <Icon name="globe" />
             Sayta bax
