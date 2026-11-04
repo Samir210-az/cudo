@@ -162,7 +162,7 @@ export default function Landing() {
   const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
   const scheduleLines = savedSchedule.length ? savedSchedule : DEFAULT_SCHEDULE;
   const about = settings?.about || DEFAULT_ABOUT;
-  const hasContact = Boolean(settings?.address || phone);
+  const hasContact = Boolean(settings?.address || phone || branches.length);
 
   useEffect(() => {
     document.title = name;
@@ -190,7 +190,6 @@ export default function Landing() {
             <nav className="site-nav-links" aria-label="Səhifə bölmələri">
               <a href="#cudo">Cüdo</a>
               <a href="#melumat">Məşqlər</a>
-              {branches.length > 0 && <a href="#filiallar">Filiallar</a>}
               {hasContact && <a href="#elaqe">Əlaqə</a>}
             </nav>
           </div>
@@ -250,25 +249,6 @@ export default function Landing() {
         </div>
       </Band>
 
-      {branches.length > 0 && (
-        <Band id="filiallar" tone="sky" title="Filiallar">
-          <div className="tiles">
-            {branches.map((branch, i) => {
-              const branchPhone = branch.phone ? normalizePhone(branch.phone) : '';
-              const lines = (branch.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
-              return (
-                <article className={`tile tile-${(i % 3) + 1}`} key={branch.id}>
-                  <h3>{branch.club_name}</h3>
-                  {branch.address && <p>{branch.address}</p>}
-                  {lines.length > 0 && <p>{lines.join(' · ')}</p>}
-                  {branchPhone && <p><a href={`tel:+994${branchPhone.slice(1)}`}>{formatPhone(branchPhone)}</a></p>}
-                </article>
-              );
-            })}
-          </div>
-        </Band>
-      )}
-
       <Band id="qalereya" tone="gold" title="Matın üzərində">
         <div className="gallery">
           {GALLERY.map((item) => (
@@ -303,7 +283,7 @@ export default function Landing() {
                 {formatPhone(phone)}
               </a>
             )}
-            {settings.address && (
+            {settings?.address && (
               <p className="contact-address">
                 <Icon name="pin" /> {settings.address}
               </p>
@@ -312,6 +292,31 @@ export default function Landing() {
               <a className="btn" href={`https://wa.me/994${whatsapp.slice(1)}`} target="_blank" rel="noopener noreferrer">
                 WhatsApp-da yaz
               </a>
+            )}
+            {branches.length > 0 && (
+              <div className="branches">
+                <h3 className="sub">Filiallar</h3>
+                {branches.map((branch) => {
+                  const branchPhone = branch.phone ? normalizePhone(branch.phone) : '';
+                  const lines = (branch.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
+                  return (
+                    <article className="branch" key={branch.id}>
+                      <h4>{branch.club_name}</h4>
+                      {branch.address && (
+                        <p className="contact-address">
+                          <Icon name="pin" /> {branch.address}
+                        </p>
+                      )}
+                      {lines.length > 0 && <p className="branch-schedule">{lines.join(' · ')}</p>}
+                      {branchPhone && (
+                        <a className="branch-phone" href={`tel:+994${branchPhone.slice(1)}`}>
+                          {formatPhone(branchPhone)}
+                        </a>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
             )}
           </div>
         </Band>
