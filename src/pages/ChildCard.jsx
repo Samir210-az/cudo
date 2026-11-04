@@ -82,6 +82,23 @@ export default function ChildCard() {
     }
   };
 
+  const removeBelt = async () => {
+    try {
+      const history = (child.belt_history || []).slice(0, -1);
+      const prev = history[history.length - 1];
+      await update('children', id, {
+        belt: prev ? prev.belt : null,
+        belt_at: prev ? prev.at : null,
+        belt_history: history,
+      });
+      notify(prev ? `Kəmər geri qaytarıldı: ${prev.belt}.` : 'Kəmər götürüldü.');
+      setBeltOpen(false);
+      reload();
+    } catch (err) {
+      notify('Kəmər saxlanılmadı: ' + err.message, 'error');
+    }
+  };
+
   const giveBelt = async (name) => {
     try {
       await update('children', id, {
@@ -259,6 +276,11 @@ export default function ChildCard() {
               </button>
             ))}
           </div>
+          {child.belt && (
+            <button type="button" className="btn danger" style={{ marginTop: 14, width: '100%' }} onClick={removeBelt}>
+              Son kəmər verilməsini ləğv et
+            </button>
+          )}
         </Modal>
       )}
 
