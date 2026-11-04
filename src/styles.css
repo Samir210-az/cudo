@@ -362,3 +362,13 @@ a.row:hover, label.row:hover { background: #f3f6fc; }
 
 .schedule-card { padding: 18px 16px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.16); }
 .schedule-card .sub { margin: 0 0 12px; }
+
+.belt-icon { flex: none; vertical-align: -0.28em; margin-right: 8px; }
+.title-belt { display: inline-flex; align-items: center; }
+.title-belt .belt-icon { margin-right: 10px; }
+.warn-banner { display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; padding: 14px 16px; border-radius: 14px; background: #fff4e0; border: 1px solid #f0c987; color: #6b4306; margin-bottom: 14px; }
+.warn-banner strong { display: block; margin-bottom: 4px; }
+.warn-banner ul { margin: 6px 0 0; padding-left: 18px; }
+.belt-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.belt-pick button { display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid var(--line, #dde2ec); border-radius: 12px; background: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+.belt-pick button[aria-pressed="true"] { border-color: var(--red); }

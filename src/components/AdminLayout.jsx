@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { ClubProvider, useClub } from '../lib/clubs';
+import DebtReminder from './DebtReminder';
 import InstallButton from './InstallButton';
 import { Icon, Loader } from './ui';
 
@@ -106,6 +107,8 @@ function Shell() {
       <main className="content">
         <Outlet key={current.id} />
       </main>
+
+      <DebtReminder key={current.id} clubId={current.id} />
 
       <nav className="bottomnav" aria-label="Əsas menyu">
         {MAIN_NAV.map((item) => (

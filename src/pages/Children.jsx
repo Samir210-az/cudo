@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components/ui';
 import { calcAge, fullName, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
+import BeltIcon from '../components/BeltIcon';
 import { beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
 import { byName, list } from '../lib/db';
@@ -79,7 +80,7 @@ export default function Children() {
               <Link className="row belted" key={c.id} to={`/panel/usaqlar/${c.id}`} style={{ '--belt': belt?.stripe }}>
                 <span className={`avatar ${avatarTone(c)}`} aria-hidden="true">{initials(c)}</span>
                 <div className="row-main">
-                  <div className="row-title">{fullName(c)}</div>
+                  <div className="row-title"><BeltIcon name={c.belt} size={18} />{fullName(c)}</div>
                   <div className="row-sub">
                     {calcAge(c.birth_date)} yaş · {gradeLabel(c.grade)}
                     {c.school ? `, ${c.school}` : ''} · {trainingDuration(c.joined_at)}

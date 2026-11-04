@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, Modal, PageHead, useToast } from '../components/ui';
+import BeltIcon from '../components/BeltIcon';
 import PaymentModal from '../components/PaymentModal';
 import { sum } from '../lib/finance';
 import {
-  addMonths, calcAge, currentPeriod, fmtDate, fmtMoney, fmtPeriod, formatPhone, fullName, gradeLabel, trainingDuration,
+  addMonths, calcAge, currentPeriod, fmtDate, fmtMoney, fmtPeriod, formatPhone, fullName, gradeLabel, todayISO, trainingDuration,
 } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { beltStyle } from '../lib/belts';
+import { BELTS, beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
-import { eq, exists, get, getScan, indexById, list, remove, removeScan, removeWhere } from '../lib/db';
+import { eq, exists, get, getScan, indexById, list, remove, removeScan, removeWhere, update } from '../lib/db';
 
 function Info({ label, children }) {
   return (
@@ -25,6 +26,7 @@ export default function ChildCard() {
   const navigate = useNavigate();
   const notify = useToast();
   const [paying, setPaying] = useState(false);
+  const [beltOpen, setBeltOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [scan, setScan] = useState(null);
 
@@ -80,6 +82,21 @@ export default function ChildCard() {
     }
   };
 
+  const giveBelt = async (name) => {
+    try {
+      await update('children', id, {
+        belt: name,
+        belt_at: todayISO(),
+        belt_history: [...(child.belt_history || []), { belt: name, at: todayISO() }],
+      });
+      notify(`${name} kəmər verildi.`);
+      setBeltOpen(false);
+      reload();
+    } catch (err) {
+      notify('Kəmər saxlanılmadı: ' + err.message, 'error');
+    }
+  };
+
   const remove = async () => {
     if (!window.confirm(`${fullName(child)} silinsin? Bu əməliyyat geri qaytarılmır.`)) return;
     try {
@@ -99,10 +116,11 @@ export default function ChildCard() {
   return (
     <>
       <PageHead
-        title={fullName(child)}
+        title={<span className="title-belt"><BeltIcon name={child.belt} size={26} />{fullName(child)}</span>}
         subtitle={`${calcAge(child.birth_date)} yaş · ${child.status === 'aktiv' ? 'Aktiv' : 'Passiv'}`}
         back={<Link className="back-link" to="/panel/usaqlar">← Uşaqlar</Link>}
       >
+        <button type="button" className="btn" onClick={() => setBeltOpen(true)}>Kəmər ver</button>
         <button type="button" className="btn" onClick={() => setPaying(true)}>Ödəniş qəbul et</button>
         <button type="button" className="btn" onClick={exportPdf} disabled={exporting}>
           <Icon name="download" /> PDF
@@ -146,7 +164,9 @@ export default function ChildCard() {
             <Info label="Sinif">{child.grade === null ? null : gradeLabel(child.grade)}</Info>
             <Info label="Klubda qeydiyyat">{fmtDate(child.joined_at)}</Info>
             <Info label="Məşğul olur">{trainingDuration(child.joined_at)}</Info>
-            <Info label="Kəmər">{child.belt}</Info>
+            <Info label="Kəmər">
+              {child.belt ? <><BeltIcon name={child.belt} size={18} />{child.belt}{child.belt_at ? ` · ${fmtDate(child.belt_at)}` : ''}</> : null}
+            </Info>
             <Info label="Çəki">{child.weight_kg ? `${child.weight_kg} kq` : null}</Info>
             <Info label="Aylıq ödəniş">{fmtMoney(child.monthly_fee)}</Info>
           </dl>
@@ -227,6 +247,18 @@ export default function ChildCard() {
       {scan && (
         <Modal title="Vəsiqənin skanı" onClose={() => setScan(null)}>
           <img src={scan} alt="Vəsiqənin skanı" style={{ width: '100%', borderRadius: 10 }} />
+        </Modal>
+      )}
+
+      {beltOpen && (
+        <Modal title="Kəmər ver" onClose={() => setBeltOpen(false)}>
+          <div className="belt-pick">
+            {BELTS.map((b) => (
+              <button type="button" key={b.name} aria-pressed={child.belt === b.name} onClick={() => giveBelt(b.name)}>
+                <BeltIcon name={b.name} size={20} />{b.name}
+              </button>
+            ))}
+          </div>
         </Modal>
       )}
 

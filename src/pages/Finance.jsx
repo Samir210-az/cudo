@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import BeltIcon from '../components/BeltIcon';
 import PaymentModal from '../components/PaymentModal';
 import { Empty, ErrorBox, Field, Icon, Loader, Modal, MonthPicker, PageHead, Stat, useToast } from '../components/ui';
-import { computeDebts, EXPENSE_CATEGORIES, onlyDebtors, sum } from '../lib/finance';
+import { computeDebts, EXPENSE_CATEGORIES, onlyDebtors, OVERDUE_DAYS, overdueChildren, sum } from '../lib/finance';
 import { addMonths, currentPeriod, fmtDate, fmtMoney, fullName, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
@@ -72,10 +73,11 @@ export default function Finance() {
 
   const { data, loading, error, reload } = useQuery(async () => {
     const next = addMonths(period, 1);
-    const [allKids, rawPayments, expenses] = await Promise.all([
+    const [allKids, rawPayments, expenses, everyPayment] = await Promise.all([
       list('children'),
       list('payments', eq('period_month', period)),
       list('expenses', ...range('spent_on', period, next)),
+      list('payments'),
     ]);
     const byId = indexById(allKids);
     const payments = rawPayments
@@ -83,13 +85,15 @@ export default function Finance() {
       .map((p) => ({ ...p, children: byId.get(p.child_id) }))
       .sort((a, b) => b.paid_on.localeCompare(a.paid_on));
     expenses.sort((a, b) => b.spent_on.localeCompare(a.spent_on));
-    return { kids: allKids.filter((k) => k.status === 'aktiv').sort(byName), payments, expenses };
+    const kids = allKids.filter((k) => k.status === 'aktiv').sort(byName);
+    return { kids, payments, expenses, overdue: overdueChildren(kids, everyPayment, todayISO()) };
   }, [period]);
 
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
   const rows = data ? computeDebts(data.kids, data.payments, period) : [];
   const debtors = onlyDebtors(rows);
+  const overdue = data ? data.overdue : [];
   const expected = sum(rows, 'fee');
   const collected = data ? sum(data.payments) : 0;
 
@@ -125,16 +129,61 @@ export default function Finance() {
   return (
     <>
       <PageHead title="Maliyyə">
+        <button type="button" className={`btn${overdue.length ? ' danger' : ''}`} onClick={() => setTab('debts')}>
+          Borclular{overdue.length ? ` (${overdue.length})` : ''}
+        </button>
         <MonthPicker value={period} onChange={setPeriod} />
       </PageHead>
 
       <div className="tabs" role="tablist">
         <button type="button" role="tab" className="tab" aria-selected={tab === 'payments'} onClick={() => setTab('payments')}>Ödənişlər</button>
+        <button type="button" role="tab" className="tab" aria-selected={tab === 'debts'} onClick={() => setTab('debts')}>Borclular</button>
         <button type="button" role="tab" className="tab" aria-selected={tab === 'expenses'} onClick={() => setTab('expenses')}>Xərclər</button>
       </div>
 
+      {overdue.length > 0 && tab !== 'debts' && (
+        <div className="warn-banner" role="alert">
+          <div>
+            <strong>{overdue.length} uşağın son ödənişindən {OVERDUE_DAYS} gündən çox keçib</strong>
+            <ul>
+              {overdue.slice(0, 5).map((r) => (
+                <li key={r.child.id}>{fullName(r.child)} · {r.lastPaid ? `son ödəniş ${fmtDate(r.lastPaid)}` : 'ödəniş qeydi yoxdur'}</li>
+              ))}
+            </ul>
+            {overdue.length > 5 && <div>və daha {overdue.length - 5} uşaq</div>}
+          </div>
+          <button type="button" className="btn sm" onClick={() => setTab('debts')}>Siyahı</button>
+        </div>
+      )}
+
       {loading && !data ? (
         <Loader />
+      ) : tab === 'debts' ? (
+        <section className="card">
+          <div className="group-title" style={{ marginTop: 0 }}>
+            <h2 style={{ margin: 0 }}>Borclular</h2>
+          </div>
+          <p className="muted" style={{ marginBottom: 10 }}>Son ödənişdən {OVERDUE_DAYS} gün keçən aktiv uşaqlar.</p>
+          {overdue.length ? (
+            <div className="list">
+              {overdue.map((r) => (
+                <div className="row" key={r.child.id}>
+                  <div className="row-main">
+                    <Link to={`/panel/usaqlar/${r.child.id}`} className="row-title"><BeltIcon name={r.child.belt} size={18} />{fullName(r.child)}</Link>
+                    <div className="row-sub">
+                      {r.lastPaid ? `Son ödəniş: ${fmtDate(r.lastPaid)}` : 'Ödəniş qeydi yoxdur'} · {r.passed} gün keçib
+                    </div>
+                  </div>
+                  <button type="button" className="btn sm" onClick={() => setPaying({ child_id: r.child.id, period: currentPeriod(), amount: Number(r.child.monthly_fee) || '' })}>
+                    Ödəniş al
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Empty>Borclu uşaq yoxdur.</Empty>
+          )}
+        </section>
       ) : tab === 'payments' ? (
         <div className="stack">
           <div className="grid stats">
@@ -156,7 +205,7 @@ export default function Finance() {
                 {debtors.map((r) => (
                   <div className="row" key={r.child.id}>
                     <div className="row-main">
-                      <Link to={`/panel/usaqlar/${r.child.id}`} className="row-title">{fullName(r.child)}</Link>
+                      <Link to={`/panel/usaqlar/${r.child.id}`} className="row-title"><BeltIcon name={r.child.belt} size={18} />{fullName(r.child)}</Link>
                       <div className="row-sub">
                         Aylıq {fmtMoney(r.fee)}{r.paid ? ` · ödənilib ${fmtMoney(r.paid)}` : ''} · qalıq {fmtMoney(r.due)}
                       </div>
@@ -184,7 +233,7 @@ export default function Finance() {
                 {data.payments.map((p) => (
                   <div className="row" key={p.id}>
                     <div className="row-main">
-                      <div className="row-title">{fullName(p.children)}</div>
+                      <div className="row-title"><BeltIcon name={p.children.belt} size={18} />{fullName(p.children)}</div>
                       <div className="row-sub">{fmtDate(p.paid_on)} · {p.method}{p.note ? ` · ${p.note}` : ''}</div>
                     </div>
                     <div className="row-end">{fmtMoney(p.amount)}</div>

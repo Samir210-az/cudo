@@ -31,3 +31,25 @@ export function computeDebts(children, payments, period) {
 }
 
 export const onlyDebtors = (rows) => rows.filter((r) => r.due > 0);
+
+export const OVERDUE_DAYS = 30;
+
+const dayNumber = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
+
+export function overdueChildren(children, payments, today, days = OVERDUE_DAYS) {
+  const last = new Map();
+  for (const p of payments) {
+    if (!p.paid_on) continue;
+    const prev = last.get(p.child_id);
+    if (!prev || p.paid_on > prev) last.set(p.child_id, p.paid_on);
+  }
+  return children
+    .filter((c) => c.status === 'aktiv' && Number(c.monthly_fee) > 0)
+    .map((child) => {
+      const lastPaid = last.get(child.id) || null;
+      const since = lastPaid || child.joined_at;
+      return { child, lastPaid, passed: since ? dayNumber(today) - dayNumber(since) : 0 };
+    })
+    .filter((r) => r.passed >= days)
+    .sort((a, b) => b.passed - a.passed);
+}
