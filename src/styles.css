@@ -372,3 +372,5 @@ a.row:hover, label.row:hover { background: #f3f6fc; }
 .belt-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .belt-pick button { display: flex; align-items: center; gap: 8px; padding: 12px; border: 2px solid var(--line, #dde2ec); border-radius: 12px; background: #fff; font: inherit; font-weight: 650; cursor: pointer; }
 .belt-pick button[aria-pressed="true"] { border-color: var(--red); }
+.chip-belt { display: inline-flex; align-items: center; padding: 4px 12px; }
+.chip-belt .belt-icon { margin-right: 0; vertical-align: middle; }

@@ -151,7 +151,7 @@ export default function ChildCard() {
         <span className={`avatar lg ${avatarTone(child)}`} aria-hidden="true">{initials(child)}</span>
         <div className="chips">
           <span className="chip">{calcAge(child.birth_date)} yaş</span>
-          {belt && <span className="chip" style={{ background: belt.bg, color: belt.fg }}>{belt.name} kəmər</span>}
+          {belt && <span className="chip chip-belt" role="img" aria-label={`${belt.name} kəmər`} title={`${belt.name} kəmər`}><BeltIcon name={child.belt} size={38} /></span>}
           <span className="chip">{trainingDuration(child.joined_at)} məşğul olur</span>
           {child.grade !== null && child.grade !== undefined && <span className="chip">{gradeLabel(child.grade)}</span>}
         </div>
