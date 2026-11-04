@@ -248,7 +248,7 @@ export default function Landing() {
         <div className="split">
           <div className="schedule-groups">
             {scheduleGroups.map((group) => (
-              <div key={group.id}>
+              <div className="schedule-card" key={group.id}>
                 {scheduleGroups.length > 1 && <h3 className="sub">{group.name}</h3>}
                 <ul className="schedule">
                   {group.lines.map((line, i) => (
