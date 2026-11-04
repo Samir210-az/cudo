@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { updatePassword } from 'firebase/auth';
 import { ErrorBox, Field, Loader, PageHead, useToast } from '../components/ui';
 import { useAuth } from '../lib/auth';
+import { useClub } from '../lib/clubs';
 import { formatPhone, isValidPhone, normalizePhone } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { saveSettings as persistSettings } from '../lib/db';
+import { ROOT_CLUB, saveSettings as persistSettings } from '../lib/db';
 import { auth, emailToPhone } from '../lib/firebase';
 import { fetchSettings } from '../lib/settings';
 
@@ -13,6 +14,7 @@ const FIELDS = ['club_name', 'tagline', 'phone', 'whatsapp', 'address', 'schedul
 export default function Settings() {
   const notify = useToast();
   const { session } = useAuth();
+  const { current } = useClub();
   const { data, loading, error, reload } = useQuery(fetchSettings, []);
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -77,7 +79,10 @@ export default function Settings() {
 
   return (
     <>
-      <PageHead title="Ayarlar" subtitle="Bu məlumatlar ictimai saytda göstərilir" />
+      <PageHead
+        title="Ayarlar"
+        subtitle={`İctimai səhifə: ${window.location.host}${current.id === ROOT_CLUB ? '' : `/k/${current.id}`}`}
+      />
       <div className="stack">
         <form className="card" onSubmit={saveSettings}>
           <h2>Klub məlumatları</h2>

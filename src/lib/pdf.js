@@ -1,5 +1,5 @@
 import {
-  calcAge, formatPhone, fmtDate, fmtNum, fmtPeriod, fullName, gradeLabel, todayISO, trainingDuration,
+  calcAge, formatPhone, fmtDate, fmtNum, fmtPeriod, fullName, gradeLabel, todayISO, slugify as slug, trainingDuration,
 } from './format';
 
 let engine;
@@ -66,13 +66,6 @@ async function save(definition, filename) {
   const pdfMake = await loadEngine();
   pdfMake.createPdf(definition).download(filename);
 }
-
-const slug = (s) =>
-  s
-    .toLowerCase()
-    .replace(/ə/g, 'e').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ü/g, 'u')
-    .replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 export async function childrenListPdf(children, settings, { withId = false } = {}) {
   const header = ['№', 'Soyad, ad, ata adı', 'Doğum', 'Yaş', 'Sinif / məktəb', 'Başlama', 'Müddət', 'Kəmər', 'Valideyn'];
@@ -293,5 +286,43 @@ export async function attendanceMonthPdf(period, rows, trainingDays, settings) {
       subtitle: `${fmtPeriod(period)} · Məşq günü: ${trainingDays}`,
     }),
     `davamiyyet-${period.slice(0, 7)}.pdf`,
+  );
+}
+
+export async function overallReportPdf({ title, rows, totals }) {
+  const cell = (n, extra = {}) => ({ text: money(n), alignment: 'right', ...extra });
+  const content = [
+    { text: 'Klublar üzrə gəlir və xərc', bold: true, fontSize: 11, margin: [0, 0, 0, 4] },
+    table(
+      ['*', 80, 80, 80],
+      ['Klub', 'Gəlir', 'Xərc', 'Xalis'],
+      [
+        ...rows.map((r) => [r.club.club_name, cell(r.income), cell(r.expense), cell(r.net)]),
+        [
+          { text: 'Cəmi', bold: true },
+          cell(totals.income, { bold: true }),
+          cell(totals.expense, { bold: true }),
+          cell(totals.net, { bold: true, color: totals.net < 0 ? '#c3112b' : '#14804a' }),
+        ],
+      ],
+    ),
+    { text: 'Cari ay üzrə ödəniş borcu', bold: true, fontSize: 11, margin: [0, 14, 0, 4] },
+    table(
+      ['*', 70, 60, 80],
+      ['Klub', 'Aktiv uşaq', 'Borclu', 'Borc'],
+      [
+        ...rows.map((r) => [r.club.club_name, { text: String(r.active), alignment: 'right' }, { text: String(r.debtors), alignment: 'right' }, cell(r.debt)]),
+        [
+          { text: 'Cəmi', bold: true },
+          { text: String(totals.active), alignment: 'right', bold: true },
+          { text: String(rows.reduce((n, r) => n + r.debtors, 0)), alignment: 'right', bold: true },
+          cell(totals.debt, { bold: true }),
+        ],
+      ],
+    ),
+  ];
+  await save(
+    buildDoc('Ümumi maliyyə hesabatı', { club_name: 'Bütün klublar' }, content, { subtitle: title }),
+    `umumi-hesabat-${slug(title)}.pdf`,
   );
 }

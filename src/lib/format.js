@@ -5,6 +5,19 @@ export const MONTHS = [
 
 export const pad = (n) => String(n).padStart(2, '0');
 
+export const slugify = (s) =>
+  s
+    .toLowerCase()
+    .replace(/ə/g, 'e').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ü/g, 'u')
+    .replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+export function periodBounds(year, month) {
+  if (month === 'all') return [`${year}-01-01`, `${year + 1}-01-01`];
+  const m = Number(month);
+  return [`${year}-${pad(m + 1)}-01`, m === 11 ? `${year + 1}-01-01` : `${year}-${pad(m + 2)}-01`];
+}
+
 export const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

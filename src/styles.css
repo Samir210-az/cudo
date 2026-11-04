@@ -332,3 +332,15 @@ a.row:hover, label.row:hover { background: #f3f6fc; }
 }
 
 @media print { .sidebar, .topbar, .bottomnav, .page-actions { display: none !important; } }
+
+/* Klub seçici */
+.club-name { overflow-wrap: anywhere; }
+.club-select {
+  min-height: 36px; width: auto; max-width: 62vw; padding: 4px 30px 4px 10px;
+  background-color: rgba(255, 255, 255, 0.12); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px; font-weight: 700; letter-spacing: 0.01em;
+}
+.club-select option { color: #16202e; background: #fff; }
+.sidebar .club-select { max-width: 170px; }
+.linklike { background: none; border: 0; padding: 0; color: var(--red); font: inherit; font-weight: 650; cursor: pointer; text-align: left; }
+.linklike:hover { text-decoration: underline; }

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Icon } from '../components/ui';
-import { getSettings } from '../lib/db';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Icon, Loader } from '../components/ui';
+import { ROOT_CLUB, getPublicClub } from '../lib/db';
 import { configured } from '../lib/firebase';
 import { formatPhone, normalizePhone } from '../lib/format';
 import { useQuery } from '../lib/hooks';
@@ -139,22 +139,31 @@ const hideBroken = (e) => {
 };
 
 export default function Landing() {
+  const { slug = ROOT_CLUB } = useParams();
+  const isRoot = slug === ROOT_CLUB;
+
+  const { data: settings, loading } = useQuery(async () => {
+    if (!configured) return null;
+    try {
+      return await getPublicClub(slug);
+    } catch {
+      return null;
+    }
+  }, [slug]);
+
+  if (!isRoot && loading) return <Loader />;
+  if (!isRoot && !settings) return <Navigate to="/" replace />;
+  return <ClubSite key={slug} settings={settings} isRoot={isRoot} />;
+}
+
+function ClubSite({ settings, isRoot }) {
   const navigate = useNavigate();
   const heroWrap = useRef(null);
   const heroMedia = useRef(null);
   useParallax(heroWrap, heroMedia);
   const tapLogo = useSecretTaps(() => navigate('/giris'));
 
-  const { data: settings } = useQuery(async () => {
-    if (!configured) return null;
-    try {
-      return await getSettings();
-    } catch {
-      return null;
-    }
-  });
-
-  const name = settings?.club_name || 'Cüdo Klub';
+  const name = settings?.club_name || (isRoot ? 'Cüdo Klub' : '');
   const phone = settings?.phone ? normalizePhone(settings.phone) : '';
   const whatsapp = settings?.whatsapp ? normalizePhone(settings.whatsapp) : '';
   const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);

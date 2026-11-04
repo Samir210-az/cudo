@@ -15,6 +15,8 @@ const CompetitionDetail = lazy(() => import('./pages/CompetitionDetail'));
 const Finance = lazy(() => import('./pages/Finance'));
 const Staff = lazy(() => import('./pages/Staff'));
 const Reports = lazy(() => import('./pages/Reports'));
+const Overall = lazy(() => import('./pages/Overall'));
+const Clubs = lazy(() => import('./pages/Clubs'));
 const Settings = lazy(() => import('./pages/Settings'));
 const More = lazy(() => import('./pages/More'));
 
@@ -23,6 +25,7 @@ export default function App() {
     <Suspense fallback={<Loader />}>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/k/:slug" element={<Landing />} />
         <Route path="/giris" element={<Login />} />
         <Route path="/panel" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
@@ -36,6 +39,8 @@ export default function App() {
           <Route path="maliyye" element={<Finance />} />
           <Route path="heyet" element={<Staff />} />
           <Route path="hesabat" element={<Reports />} />
+          <Route path="umumi" element={<Overall />} />
+          <Route path="klublar" element={<Clubs />} />
           <Route path="ayarlar" element={<Settings />} />
           <Route path="daha" element={<More />} />
         </Route>

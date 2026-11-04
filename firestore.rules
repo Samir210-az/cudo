@@ -9,7 +9,13 @@ service cloud.firestore {
         && request.auth.token.email in ['ADMIN_TELEFON@cudo-klub.vercel.app'];
     }
 
-    // İctimai saytda göstərilən klub məlumatı hamıya açıqdır
+    // İctimai saytda göstərilən klub məlumatı (ad, telefon, ünvan, cədvəl) hamıya açıqdır.
+    // Yalnız klubun öz sənədi açıqdır; uşaqlar, ödənişlər və digər alt kolleksiyalar admin üçündür.
+    match /clubs/{clubId} {
+      allow read: if true;
+    }
+
+    // Köçürmədən əvvəlki köhnə ayar sənədi
     match /settings/club {
       allow read: if true;
     }

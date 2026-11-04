@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { ClubProvider, useClub } from '../lib/clubs';
 import InstallButton from './InstallButton';
 import { Icon, Loader } from './ui';
 
@@ -15,13 +16,30 @@ const MAIN_NAV = [
 const EXTRA_NAV = [
   { to: '/panel/heyet', label: 'Heyət və maaş', icon: 'briefcase', color: '#22b8ba' },
   { to: '/panel/hesabat', label: 'Hesabat', icon: 'chart', color: '#5b97ff' },
+  { to: '/panel/umumi', label: 'Ümumi hesabat', icon: 'wallet', color: '#9a74f0' },
+  { to: '/panel/klublar', label: 'Klublar', icon: 'globe', color: '#e0a526' },
   { to: '/panel/ayarlar', label: 'Ayarlar', icon: 'settings', color: '#98a4b8' },
 ];
 
 const navClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
 
+function ClubSwitch() {
+  const { clubs, current, switchClub } = useClub();
+  if (clubs.length < 2) return <span className="club-name">{current.club_name}</span>;
+  return (
+    <select
+      className="club-select"
+      value={current.id}
+      onChange={(e) => switchClub(e.target.value)}
+      aria-label="Aktiv klub"
+    >
+      {clubs.map((c) => <option key={c.id} value={c.id}>{c.club_name}</option>)}
+    </select>
+  );
+}
+
 export default function AdminLayout() {
-  const { session, signOut } = useAuth();
+  const { session } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -40,11 +58,22 @@ export default function AdminLayout() {
   if (!session) return <Navigate to="/giris" replace />;
 
   return (
+    <ClubProvider>
+      <Shell />
+    </ClubProvider>
+  );
+}
+
+function Shell() {
+  const { signOut } = useAuth();
+  const { current } = useClub();
+
+  return (
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
           <img className="brand-logo" src="/logo-128.webp" alt="" width="28" height="34" />
-          <span>Cüdo Klub</span>
+          <ClubSwitch />
         </div>
         <nav aria-label="Əsas menyu">
           {[...MAIN_NAV, ...EXTRA_NAV].map((item) => (
@@ -70,12 +99,12 @@ export default function AdminLayout() {
       <header className="topbar">
         <div className="brand">
           <img className="brand-logo" src="/logo-128.webp" alt="" width="28" height="34" />
-          <span>Cüdo Klub</span>
+          <ClubSwitch />
         </div>
       </header>
 
       <main className="content">
-        <Outlet />
+        <Outlet key={current.id} />
       </main>
 
       <nav className="bottomnav" aria-label="Əsas menyu">

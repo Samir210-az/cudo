@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ErrorBox, Icon, Loader, PageHead, Stat, useToast } from '../components/ui';
 import { sum } from '../lib/finance';
-import { MONTHS, fmtMoney, pad } from '../lib/format';
+import { MONTHS, fmtMoney, pad, periodBounds } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
 import { indexById, list, range } from '../lib/db';
@@ -15,13 +15,7 @@ export default function Reports() {
   const [month, setMonth] = useState('all');
   const [exporting, setExporting] = useState(false);
 
-  const bounds = useMemo(() => {
-    if (month === 'all') return [`${year}-01-01`, `${year + 1}-01-01`];
-    const m = Number(month);
-    const start = `${year}-${pad(m + 1)}-01`;
-    const end = m === 11 ? `${year + 1}-01-01` : `${year}-${pad(m + 2)}-01`;
-    return [start, end];
-  }, [year, month]);
+  const bounds = useMemo(() => periodBounds(year, month), [year, month]);
 
   const { data, loading, error, reload } = useQuery(async () => {
     const [from, to] = bounds;
