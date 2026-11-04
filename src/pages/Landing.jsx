@@ -35,12 +35,6 @@ const TILES = [
   },
 ];
 
-const scheduleBlocks = (text = '') =>
-  text
-    .split(/\n\s*\n/)
-    .map((block) => block.split('\n').map((l) => l.trim()).filter(Boolean).join(' '))
-    .filter(Boolean);
-
 const DEFAULT_SCHEDULE = ['Bazar ertəsi', 'Çərşənbə', 'Cümə'];
 const DEFAULT_ABOUT = 'Məşqlər peşəkar məşqçilər tərəfindən keçirilir.';
 
@@ -165,7 +159,7 @@ export default function Landing() {
   const name = settings?.club_name || 'Cüdo Klub';
   const phone = settings?.phone ? normalizePhone(settings.phone) : '';
   const whatsapp = settings?.whatsapp ? normalizePhone(settings.whatsapp) : '';
-  const savedSchedule = scheduleBlocks(settings?.schedule);
+  const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
   const scheduleLines = savedSchedule.length ? savedSchedule : DEFAULT_SCHEDULE;
   const about = settings?.about || DEFAULT_ABOUT;
   const contactBranches = branches.filter((b) => b.address || b.phone);
@@ -173,7 +167,7 @@ export default function Landing() {
   const scheduleGroups = [
     { id: ROOT_CLUB, name, lines: scheduleLines },
     ...branches
-      .map((b) => ({ id: b.id, name: b.club_name, lines: scheduleBlocks(b.schedule) }))
+      .map((b) => ({ id: b.id, name: b.club_name, lines: (b.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean) }))
       .filter((g) => g.lines.length),
   ];
 
@@ -255,8 +249,8 @@ export default function Landing() {
               <div key={group.id}>
                 {scheduleGroups.length > 1 && <h3 className="sub">{group.name}</h3>}
                 <ul className="schedule">
-                  {group.lines.map((line, i) => (
-                    <li key={i}>{line}</li>
+                  {group.lines.map((line) => (
+                    <li key={line}>{line}</li>
                   ))}
                 </ul>
               </div>
