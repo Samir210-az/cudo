@@ -95,7 +95,7 @@ export default function Settings() {
             <Field label="Telefon"><input type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} /></Field>
             {isRoot && <Field label="WhatsApp nömrəsi"><input type="tel" inputMode="tel" value={form.whatsapp} onChange={set('whatsapp')} /></Field>}
             <Field label="Ünvan" wide><input value={form.address} onChange={set('address')} /></Field>
-            <Field label="Məşq cədvəli" hint="Hər gün ayrıca sətirdə yazın" wide>
+            <Field label="Məşq cədvəli" hint="Günləri və saatı bir kartda yazın. Saytda ayrı kart istəyirsinizsə, onları boş sətirlə ayırın" wide>
               <textarea value={form.schedule} onChange={set('schedule')} />
             </Field>
             {isRoot && <Field label="Klub haqqında" wide><textarea value={form.about} onChange={set('about')} /></Field>}
