@@ -142,6 +142,21 @@ export default function Finance() {
         <button type="button" role="tab" className="tab" aria-selected={tab === 'expenses'} onClick={() => setTab('expenses')}>Xərclər</button>
       </div>
 
+      {overdue.length > 0 && (
+        <div className="warn-banner" role="alert">
+          <div>
+            <strong>{overdue.length} uşağın son ödənişindən {OVERDUE_DAYS} gündən çox keçib</strong>
+            <ul>
+              {overdue.slice(0, 5).map((r) => (
+                <li key={r.child.id}>{fullName(r.child)} · {r.lastPaid ? `son ödəniş ${fmtDate(r.lastPaid)}` : 'ödəniş qeydi yoxdur'}</li>
+              ))}
+            </ul>
+            {overdue.length > 5 && <div>və daha {overdue.length - 5} uşaq</div>}
+          </div>
+          <button type="button" className="btn sm" onClick={() => setTab('debts')}>Siyahı</button>
+        </div>
+      )}
+
       {loading && !data ? (
         <Loader />
       ) : tab === 'debts' ? (
