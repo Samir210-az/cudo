@@ -67,7 +67,7 @@ export default function Overall() {
     setExporting(true);
     try {
       const { overallReportPdf } = await import('../lib/pdf');
-      await overallReportPdf({ title, rows, totals, brand: clubs.find((c) => c.id === ROOT_CLUB)?.club_name || 'Cüdo Klub' });
+      await overallReportPdf({ title, rows, totals, brand: clubs.find((c) => c.id === ROOT_CLUB)?.club_name || 'HÜNƏR İDMAN KLUBU' });
     } catch (err) {
       notify('PDF hazırlanmadı: ' + err.message, 'error');
     } finally {

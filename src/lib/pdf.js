@@ -52,7 +52,7 @@ const section = (text, margin = [0, 14, 0, 6]) => ({
 });
 
 function clubTitle(settings) {
-  const brand = settings?.brand_name || 'Cüdo Klub';
+  const brand = settings?.brand_name || 'HÜNƏR İDMAN KLUBU';
   return settings?.is_branch ? `${brand} ${settings.club_name}` : settings?.club_name || brand;
 }
 

@@ -158,7 +158,7 @@ export default function Landing() {
   const settings = data?.settings;
   const branches = data?.branches || [];
 
-  const name = settings?.club_name || 'Cüdo Klub';
+  const name = settings?.club_name || 'HÜNƏR İDMAN KLUBU';
   const phone = settings?.phone ? normalizePhone(settings.phone) : '';
   const whatsapp = settings?.whatsapp ? normalizePhone(settings.whatsapp) : '';
   const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);

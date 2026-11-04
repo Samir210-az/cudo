@@ -32,7 +32,7 @@ export async function migrateLegacy(onStep = () => {}) {
 
   const legacy = await getDoc(doc(firestore, 'settings', 'club'));
   await setDoc(doc(firestore, 'clubs', ROOT_CLUB), {
-    club_name: 'Cüdo Klub',
+    club_name: 'HÜNƏR İDMAN KLUBU',
     ...(legacy.exists() ? legacy.data() : {}),
     created_at: new Date().toISOString(),
   });

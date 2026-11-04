@@ -60,7 +60,7 @@ export default function Login() {
   return (
     <div className="auth">
       <div className="auth-card">
-        <img className="auth-logo" src="/logo-128.webp" alt="Cüdo Klub" width="68" height="84" />
+        <img className="auth-logo" src="/logo-128.webp" alt="HÜNƏR İDMAN KLUBU" width="68" height="84" />
         <h1>Admin girişi</h1>
         <p className="muted">Telefon nömrəniz və PİN kodla daxil olun.</p>
         {!configured && (

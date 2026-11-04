@@ -23,7 +23,7 @@ export default function Settings() {
   const [pin2, setPin2] = useState('');
 
   useEffect(() => {
-    if (data) setForm(Object.fromEntries(FIELDS.map((k) => [k, data[k] ?? (k === 'club_name' ? 'Cüdo Klub' : '')])));
+    if (data) setForm(Object.fromEntries(FIELDS.map((k) => [k, data[k] ?? (k === 'club_name' ? 'HÜNƏR İDMAN KLUBU' : '')])));
   }, [data]);
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));

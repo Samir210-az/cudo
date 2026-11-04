@@ -35,7 +35,7 @@ export default function InstallButton({ className = 'btn' }) {
             </ol>
           )}
           <p className="muted" style={{ marginTop: 12 }}>
-            Yükləndikdən sonra tətbiq ana ekranda "Cüdo Klub" adı ilə görünür və brauzer panelisiz açılır.
+            Yükləndikdən sonra tətbiq ana ekranda "HÜNƏR İDMAN KLUBU" adı ilə görünür və brauzer panelisiz açılır.
           </p>
         </Modal>
       )}

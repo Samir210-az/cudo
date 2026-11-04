@@ -1,6 +1,6 @@
-# Cüdo Klub
+# HÜNƏR İDMAN KLUBU
 
-Cüdo klubu üçün ictimai sayt və admin paneli. Vite + React, giriş və verilənlər bazası Firebase-dədir (Authentication + Firestore).
+HÜNƏR İDMAN KLUBU üçün ictimai sayt və admin paneli. Vite + React, giriş və verilənlər bazası Firebase-dədir (Authentication + Firestore).
 
 ## Qurulum
 
