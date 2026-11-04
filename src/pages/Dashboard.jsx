@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, Stat } from '../components/ui';
+import DebtTicker from '../components/DebtTicker';
 import PaymentModal from '../components/PaymentModal';
-import { computeDebts, OVERDUE_DAYS, overdueChildren, onlyDebtors, sum } from '../lib/finance';
+import { computeDebts, overdueChildren, onlyDebtors, sum } from '../lib/finance';
 import { addMonths, currentPeriod, fmtDate, fmtLongDate, fmtMoney, fmtPeriod, fullName, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { eq, list, range, where } from '../lib/db';
@@ -50,25 +51,9 @@ export default function Dashboard() {
         <button type="button" className="btn" onClick={() => setPaying({})}>
           Ödəniş qəbul et
         </button>
-        <Link to="/panel/maliyye?tab=debts" className={`btn${data.overdue.length ? ' danger' : ''}`}>
-          Borclular{data.overdue.length ? ` (${data.overdue.length})` : ''}
-        </Link>
       </PageHead>
 
-      {data.overdue.length > 0 && (
-        <div className="warn-banner" role="alert">
-          <div>
-            <strong>{data.overdue.length} uşağın son ödənişindən {OVERDUE_DAYS} gündən çox keçib</strong>
-            <ul>
-              {data.overdue.slice(0, 5).map((r) => (
-                <li key={r.child.id}>{fullName(r.child)} · {r.lastPaid ? `son ödəniş ${fmtDate(r.lastPaid)}` : 'ödəniş qeydi yoxdur'}</li>
-              ))}
-            </ul>
-            {data.overdue.length > 5 && <div>və daha {data.overdue.length - 5} uşaq</div>}
-          </div>
-          <Link to="/panel/maliyye?tab=debts" className="btn sm">Siyahı</Link>
-        </div>
-      )}
+      {data.overdue.length > 0 && <DebtTicker rows={data.overdue} />}
 
       <section className="today">
         <div>
