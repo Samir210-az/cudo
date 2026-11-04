@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, Stat } from '../components/ui';
 import PaymentModal from '../components/PaymentModal';
-import { computeDebts, onlyDebtors, sum } from '../lib/finance';
+import { computeDebts, OVERDUE_DAYS, overdueChildren, onlyDebtors, sum } from '../lib/finance';
 import { addMonths, currentPeriod, fmtDate, fmtLongDate, fmtMoney, fmtPeriod, fullName, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { eq, list, range, where } from '../lib/db';
@@ -13,7 +13,7 @@ export default function Dashboard() {
   const [paying, setPaying] = useState(null);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [kids, duePayments, cashIn, expenses, salaries, upcoming, entries] = await Promise.all([
+    const [kids, duePayments, cashIn, expenses, salaries, upcoming, entries, everyPayment] = await Promise.all([
       list('children', eq('status', 'aktiv')),
       list('payments', eq('period_month', period)),
       list('payments', ...range('paid_on', period, next)),
@@ -21,6 +21,7 @@ export default function Dashboard() {
       list('salaryPayments', ...range('paid_on', period, next)),
       list('competitions', where('held_on', '>=', todayISO())),
       list('competitionEntries'),
+      list('payments'),
     ]);
     const counts = new Map();
     entries.forEach((e) => counts.set(e.competition_id, (counts.get(e.competition_id) || 0) + 1));
@@ -28,7 +29,7 @@ export default function Dashboard() {
       .sort((a, b) => a.held_on.localeCompare(b.held_on))
       .slice(0, 3)
       .map((c) => ({ ...c, count: counts.get(c.id) || 0 }));
-    return { kids, duePayments, cashIn, expenses, salaries, competitions };
+    return { kids, duePayments, cashIn, expenses, salaries, competitions, overdue: overdueChildren(kids, everyPayment, todayISO()) };
   }, []);
 
   if (loading && !data) return <Loader />;
@@ -49,7 +50,25 @@ export default function Dashboard() {
         <button type="button" className="btn" onClick={() => setPaying({})}>
           Ödəniş qəbul et
         </button>
+        <Link to="/panel/maliyye?tab=debts" className={`btn${data.overdue.length ? ' danger' : ''}`}>
+          Borclular{data.overdue.length ? ` (${data.overdue.length})` : ''}
+        </Link>
       </PageHead>
+
+      {data.overdue.length > 0 && (
+        <div className="warn-banner" role="alert">
+          <div>
+            <strong>{data.overdue.length} uşağın son ödənişindən {OVERDUE_DAYS} gündən çox keçib</strong>
+            <ul>
+              {data.overdue.slice(0, 5).map((r) => (
+                <li key={r.child.id}>{fullName(r.child)} · {r.lastPaid ? `son ödəniş ${fmtDate(r.lastPaid)}` : 'ödəniş qeydi yoxdur'}</li>
+              ))}
+            </ul>
+            {data.overdue.length > 5 && <div>və daha {data.overdue.length - 5} uşaq</div>}
+          </div>
+          <Link to="/panel/maliyye?tab=debts" className="btn sm">Siyahı</Link>
+        </div>
+      )}
 
       <section className="today">
         <div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import BeltIcon from '../components/BeltIcon';
 import PaymentModal from '../components/PaymentModal';
 import { Empty, ErrorBox, Field, Icon, Loader, Modal, MonthPicker, PageHead, Stat, useToast } from '../components/ui';
@@ -66,7 +66,8 @@ function ExpenseModal({ onClose, onSaved }) {
 
 export default function Finance() {
   const notify = useToast();
-  const [tab, setTab] = useState('payments');
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(params.get('tab') === 'debts' ? 'debts' : 'payments');
   const [period, setPeriod] = useState(currentPeriod());
   const [paying, setPaying] = useState(null);
   const [addingExpense, setAddingExpense] = useState(false);
@@ -141,7 +142,7 @@ export default function Finance() {
         <button type="button" role="tab" className="tab" aria-selected={tab === 'expenses'} onClick={() => setTab('expenses')}>Xərclər</button>
       </div>
 
-      {overdue.length > 0 && tab !== 'debts' && (
+      {overdue.length > 0 && (
         <div className="warn-banner" role="alert">
           <div>
             <strong>{overdue.length} uşağın son ödənişindən {OVERDUE_DAYS} gündən çox keçib</strong>
