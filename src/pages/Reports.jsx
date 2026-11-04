@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ErrorBox, Icon, Loader, PageHead, Stat, useToast } from '../components/ui';
 import { sum } from '../lib/finance';
 import { MONTHS, fmtMoney, pad, periodBounds } from '../lib/format';
@@ -85,6 +86,7 @@ export default function Reports() {
   return (
     <>
       <PageHead title="Hesabat" subtitle="Gəlir və xərc faktiki ödəniş tarixinə görə hesablanır">
+        <Link className="btn" to="/panel/umumi">Ümumi hesabat</Link>
         <button type="button" className="btn primary" onClick={exportPdf} disabled={!report || exporting}>
           <Icon name="download" /> {exporting ? 'Hazırlanır…' : 'PDF'}
         </button>

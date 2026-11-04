@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ErrorBox, Icon, Loader, PageHead, Stat, useToast } from '../components/ui';
 import { useClub } from '../lib/clubs';
-import { eq, indexById, listFor, range } from '../lib/db';
+import { ROOT_CLUB, eq, indexById, listFor, range } from '../lib/db';
 import { computeDebts, onlyDebtors, sum } from '../lib/finance';
 import { MONTHS, currentPeriod, fmtMoney, periodBounds } from '../lib/format';
 import { useQuery } from '../lib/hooks';
@@ -67,7 +67,7 @@ export default function Overall() {
     setExporting(true);
     try {
       const { overallReportPdf } = await import('../lib/pdf');
-      await overallReportPdf({ title, rows, totals });
+      await overallReportPdf({ title, rows, totals, brand: clubs.find((c) => c.id === ROOT_CLUB)?.club_name || 'Cüdo Klub' });
     } catch (err) {
       notify('PDF hazırlanmadı: ' + err.message, 'error');
     } finally {

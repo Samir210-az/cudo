@@ -38,13 +38,32 @@ function table(widths, header, body, extra = {}) {
   };
 }
 
+const TITLE_COLOR = '#c3112b';
+const SECTION_COLOR = '#1f4fa3';
+
+const section = (text, margin = [0, 14, 0, 6]) => ({
+  text,
+  alignment: 'center',
+  bold: true,
+  fontSize: 12,
+  color: SECTION_COLOR,
+  headlineLevel: 1,
+  margin,
+});
+
+function clubTitle(settings) {
+  const brand = settings?.brand_name || 'Cüdo Klub';
+  return settings?.is_branch ? `${brand} ${settings.club_name}` : settings?.club_name || brand;
+}
+
 function buildDoc(title, settings, content, { landscape = false, subtitle } = {}) {
-  const club = settings?.club_name || 'Cüdo Klub';
+  const club = clubTitle(settings);
   return {
     pageSize: 'A4',
     pageOrientation: landscape ? 'landscape' : 'portrait',
-    pageMargins: [36, 40, 36, 46],
+    pageMargins: [36, 36, 36, 46],
     defaultStyle: { font: 'Roboto', fontSize: 9.5, color: '#16202e' },
+    pageBreakBefore: (node, following) => node.headlineLevel === 1 && following.length === 0,
     footer: (page, pages) => ({
       columns: [
         { text: `${club} · ${fmtDate(todayISO())}`, color: '#6b7788' },
@@ -54,17 +73,40 @@ function buildDoc(title, settings, content, { landscape = false, subtitle } = {}
       fontSize: 8,
     }),
     content: [
-      { text: club, fontSize: 9, color: '#c3112b', bold: true, characterSpacing: 1 },
-      { text: title, fontSize: 18, bold: true, margin: [0, 2, 0, subtitle ? 2 : 12] },
-      ...(subtitle ? [{ text: subtitle, color: '#5b6879', margin: [0, 0, 0, 12] }] : []),
+      { image: 'logo', width: 44, alignment: 'center' },
+      { text: club, fontSize: 14, bold: true, alignment: 'center', color: '#0e1a2b', margin: [0, 6, 0, 8] },
+      {
+        canvas: [{ type: 'line', x1: 0, y1: 0, x2: landscape ? 770 : 523, y2: 0, lineWidth: 1.2, lineColor: TITLE_COLOR }],
+        margin: [0, 0, 0, 10],
+      },
+      { text: title, fontSize: 18, bold: true, alignment: 'center', color: TITLE_COLOR, margin: [0, 0, 0, subtitle ? 2 : 14] },
+      ...(subtitle ? [{ text: subtitle, alignment: 'center', color: '#5b6879', margin: [0, 0, 0, 14] }] : []),
       ...content,
     ],
   };
 }
 
+let logoData;
+function loadLogo() {
+  if (!logoData) {
+    logoData = fetch('/logo-pdf.png')
+      .then((res) => res.blob())
+      .then(
+        (blob) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }),
+      );
+  }
+  return logoData;
+}
+
 async function save(definition, filename) {
-  const pdfMake = await loadEngine();
-  pdfMake.createPdf(definition).download(filename);
+  const [pdfMake, logo] = await Promise.all([loadEngine(), loadLogo()]);
+  pdfMake.createPdf({ ...definition, images: { logo } }).download(filename);
 }
 
 export async function childrenListPdf(children, settings, { withId = false } = {}) {
@@ -125,7 +167,7 @@ export async function childCardPdf(child, { entries, payments }, settings) {
   ];
   if (child.note) content.push({ text: `Qeyd: ${child.note}`, margin: [0, 8, 0, 0] });
 
-  content.push({ text: 'Yarışlar', fontSize: 12, bold: true, margin: [0, 16, 0, 6] });
+  content.push(section('Yarışlar', [0, 16, 0, 6]));
   content.push(
     entries.length
       ? table(
@@ -136,7 +178,7 @@ export async function childCardPdf(child, { entries, payments }, settings) {
       : { text: 'Yarış iştirakı yoxdur.', color: '#6b7788' },
   );
 
-  content.push({ text: 'Ödənişlər', fontSize: 12, bold: true, margin: [0, 16, 0, 6] });
+  content.push(section('Ödənişlər', [0, 16, 0, 6]));
   content.push(
     payments.length
       ? table(
@@ -161,7 +203,7 @@ export async function competitionPdf(competition, entries, settings) {
   [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b, 'az', { numeric: true }))
     .forEach(([name, rows]) => {
-      content.push({ text: `${name} (${rows.length})`, bold: true, fontSize: 11, margin: [0, 10, 0, 4] });
+      content.push(section(`${name} (${rows.length})`, [0, 10, 0, 4]));
       content.push(
         table(
           [20, '*', 30, 44, 70],
@@ -217,14 +259,14 @@ export async function financeReportPdf(report, settings) {
       },
       layout: tableLayout,
     },
-    { text: 'Xərclər kateqoriyalar üzrə', bold: true, fontSize: 11, margin: [0, 14, 0, 4] },
+    section('Xərclər kateqoriyalar üzrə'),
     categories.length
       ? table(['*', 90], ['Kateqoriya', 'Məbləğ'], categories.map(([name, value]) => [name, { text: money(value), alignment: 'right' }]))
       : { text: 'Xərc yoxdur.', color: '#6b7788' },
   ];
 
   if (monthly) {
-    content.push({ text: 'Aylar üzrə', bold: true, fontSize: 11, margin: [0, 14, 0, 4] });
+    content.push(section('Aylar üzrə'));
     content.push(
       table(
         ['*', 80, 80, 80],
@@ -241,7 +283,7 @@ export async function financeReportPdf(report, settings) {
 
   const detail = (label, rows, header, widths, mapper) => {
     if (!rows.length) return;
-    content.push({ text: label, bold: true, fontSize: 11, margin: [0, 14, 0, 4] });
+    content.push(section(label));
     content.push(table(widths, header, rows.map(mapper)));
   };
 
@@ -289,10 +331,10 @@ export async function attendanceMonthPdf(period, rows, trainingDays, settings) {
   );
 }
 
-export async function overallReportPdf({ title, rows, totals }) {
+export async function overallReportPdf({ title, rows, totals, brand }) {
   const cell = (n, extra = {}) => ({ text: money(n), alignment: 'right', ...extra });
   const content = [
-    { text: 'Filiallar üzrə gəlir və xərc', bold: true, fontSize: 11, margin: [0, 0, 0, 4] },
+    section('Filiallar üzrə gəlir və xərc', [0, 0, 0, 6]),
     table(
       ['*', 80, 80, 80],
       ['Filial', 'Gəlir', 'Xərc', 'Xalis'],
@@ -306,7 +348,7 @@ export async function overallReportPdf({ title, rows, totals }) {
         ],
       ],
     ),
-    { text: 'Cari ay üzrə ödəniş borcu', bold: true, fontSize: 11, margin: [0, 14, 0, 4] },
+    section('Cari ay üzrə ödəniş borcu'),
     table(
       ['*', 70, 60, 80],
       ['Filial', 'Aktiv uşaq', 'Borclu', 'Borc'],
@@ -322,7 +364,7 @@ export async function overallReportPdf({ title, rows, totals }) {
     ),
   ];
   await save(
-    buildDoc('Ümumi maliyyə hesabatı', { club_name: 'Bütün filiallar' }, content, { subtitle: title }),
+    buildDoc('Ümumi maliyyə hesabatı', { club_name: brand, brand_name: brand }, content, { subtitle: title }),
     `umumi-hesabat-${slug(title)}.pdf`,
   );
 }
