@@ -35,6 +35,8 @@ const TILES = [
   },
 ];
 
+const TIME_RE = /\d{1,2}[:.]\d{2}/;
+
 const DEFAULT_SCHEDULE = ['Bazar ertəsi', 'Çərşənbə', 'Cümə'];
 const DEFAULT_ABOUT = 'Məşqlər peşəkar məşqçilər tərəfindən keçirilir.';
 
@@ -249,8 +251,8 @@ export default function Landing() {
               <div key={group.id}>
                 {scheduleGroups.length > 1 && <h3 className="sub">{group.name}</h3>}
                 <ul className="schedule">
-                  {group.lines.map((line) => (
-                    <li key={line}>{line}</li>
+                  {group.lines.map((line, i) => (
+                    <li key={i} className={TIME_RE.test(line) ? 'is-time' : undefined}>{line}</li>
                   ))}
                 </ul>
               </div>

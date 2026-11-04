@@ -357,3 +357,5 @@ a.row:hover, label.row:hover { background: #f3f6fc; }
 
 .schedule-groups { display: grid; gap: 26px; }
 .schedule-groups .sub { margin: 0 0 10px; }
+
+.schedule li.is-time { border-left-color: var(--gold); background: rgba(240, 190, 80, 0.16); color: #ffe3a3; font-weight: 800; letter-spacing: 0.02em; }
