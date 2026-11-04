@@ -8,4 +8,6 @@ export const BELTS = [
   { name: 'Qara', bg: '#14181f', fg: '#ffffff', stripe: '#14181f' },
 ];
 
+export const beltRank = (name) => BELTS.findIndex((b) => b.name === name);
+
 export const beltStyle = (name) => BELTS.find((b) => b.name === name) || null;

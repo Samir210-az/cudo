@@ -4,6 +4,7 @@ import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components
 import { calcAge, fullName, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import BeltIcon from '../components/BeltIcon';
+import { beltRank } from '../lib/belts';
 import { beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
 import { byName, list } from '../lib/db';
@@ -22,7 +23,7 @@ export default function Children() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase('az');
-    return (data || []).filter((c) => {
+    return [...(data || [])].sort((a, b) => beltRank(b.belt) - beltRank(a.belt)).filter((c) => {
       if (status !== 'hamısı' && c.status !== status) return false;
       if (!needle) return true;
       return `${fullName(c)} ${c.father_name || ''} ${c.school || ''}`.toLocaleLowerCase('az').includes(needle);
