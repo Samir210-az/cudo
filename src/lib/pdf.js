@@ -113,7 +113,7 @@ export async function childrenListPdf(children, settings, { withId = false } = {
   const header = ['№', 'Soyad, ad, ata adı', 'Doğum', 'Yaş', 'Sinif / məktəb', 'Başlama', 'Müddət', 'Kəmər', 'Valideyn'];
   const widths = [18, '*', 52, 22, 100, 52, 56, 40, 90];
   if (withId) {
-    header.push('Vəsiqə / FİN');
+    header.push('Vəsiqə №');
     widths.push(78);
   }
   const body = children.map((c, i) => {
@@ -128,7 +128,7 @@ export async function childrenListPdf(children, settings, { withId = false } = {
       dash(c.belt),
       [c.parent_name, c.parent_phone ? formatPhone(c.parent_phone) : null].filter(Boolean).join(', ') || '—',
     ];
-    if (withId) row.push([c.id_series, c.id_fin].filter(Boolean).join(' / ') || '—');
+    if (withId) row.push(dash(c.id_series));
     return row;
   });
   const def = buildDoc('Uşaqların siyahısı', settings, [table(widths, header, body)], {
