@@ -351,7 +351,9 @@ a.row:hover, label.row:hover { background: #f3f6fc; }
 .branch { display: grid; gap: 6px; padding: 16px 18px; border-radius: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); }
 .branch h4 { font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; }
 .branch .contact-address { font-size: 1.02rem; }
-.branch-schedule { color: #fde7ea; font-size: 0.95rem; }
 .branch-phone { color: #fff; font-weight: 800; font-size: 1.15rem; }
 .branch-phone:hover { color: #ffe3a3; text-decoration: none; }
 @media (min-width: 800px) { .branches { grid-template-columns: repeat(2, 1fr); } .branches .sub { grid-column: 1 / -1; } }
+
+.schedule-groups { display: grid; gap: 26px; }
+.schedule-groups .sub { margin: 0 0 10px; }

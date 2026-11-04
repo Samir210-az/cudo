@@ -151,7 +151,7 @@ export default function Landing() {
       getPublicClub(ROOT_CLUB).catch(() => null),
       listClubs().catch(() => []),
     ]);
-    return { settings, branches: clubs.filter((c) => c.id !== ROOT_CLUB && (c.address || c.phone)) };
+    return { settings, branches: clubs.filter((c) => c.id !== ROOT_CLUB && (c.address || c.phone || c.schedule)) };
   });
   const settings = data?.settings;
   const branches = data?.branches || [];
@@ -162,7 +162,14 @@ export default function Landing() {
   const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
   const scheduleLines = savedSchedule.length ? savedSchedule : DEFAULT_SCHEDULE;
   const about = settings?.about || DEFAULT_ABOUT;
-  const hasContact = Boolean(settings?.address || phone || branches.length);
+  const contactBranches = branches.filter((b) => b.address || b.phone);
+  const hasContact = Boolean(settings?.address || phone || contactBranches.length);
+  const scheduleGroups = [
+    { id: ROOT_CLUB, name, lines: scheduleLines },
+    ...branches
+      .map((b) => ({ id: b.id, name: b.club_name, lines: (b.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean) }))
+      .filter((g) => g.lines.length),
+  ];
 
   useEffect(() => {
     document.title = name;
@@ -237,11 +244,18 @@ export default function Landing() {
 
       <Band id="melumat" tone="dark" title="Məşqlər">
         <div className="split">
-          <ul className="schedule">
-            {scheduleLines.map((line) => (
-              <li key={line}>{line}</li>
+          <div className="schedule-groups">
+            {scheduleGroups.map((group) => (
+              <div key={group.id}>
+                {scheduleGroups.length > 1 && <h3 className="sub">{group.name}</h3>}
+                <ul className="schedule">
+                  {group.lines.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
           <div>
             <h3 className="sub">Klub haqqında</h3>
             <p className="prose">{about}</p>
@@ -293,12 +307,11 @@ export default function Landing() {
                 WhatsApp-da yaz
               </a>
             )}
-            {branches.length > 0 && (
+            {contactBranches.length > 0 && (
               <div className="branches">
                 <h3 className="sub">Filiallar</h3>
-                {branches.map((branch) => {
+                {contactBranches.map((branch) => {
                   const branchPhone = branch.phone ? normalizePhone(branch.phone) : '';
-                  const lines = (branch.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
                   return (
                     <article className="branch" key={branch.id}>
                       <h4>{branch.club_name}</h4>
@@ -307,7 +320,6 @@ export default function Landing() {
                           <Icon name="pin" /> {branch.address}
                         </p>
                       )}
-                      {lines.length > 0 && <p className="branch-schedule">{lines.join(' · ')}</p>}
                       {branchPhone && (
                         <a className="branch-phone" href={`tel:+994${branchPhone.slice(1)}`}>
                           {formatPhone(branchPhone)}
