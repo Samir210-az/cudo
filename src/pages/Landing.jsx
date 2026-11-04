@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { Icon, Loader } from '../components/ui';
-import { ROOT_CLUB, getPublicClub } from '../lib/db';
+import { useNavigate } from 'react-router-dom';
+import { Icon } from '../components/ui';
+import { ROOT_CLUB, getPublicClub, listClubs } from '../lib/db';
 import { configured } from '../lib/firebase';
 import { formatPhone, normalizePhone } from '../lib/format';
 import { useQuery } from '../lib/hooks';
@@ -139,31 +139,24 @@ const hideBroken = (e) => {
 };
 
 export default function Landing() {
-  const { slug = ROOT_CLUB } = useParams();
-  const isRoot = slug === ROOT_CLUB;
-
-  const { data: settings, loading } = useQuery(async () => {
-    if (!configured) return null;
-    try {
-      return await getPublicClub(slug);
-    } catch {
-      return null;
-    }
-  }, [slug]);
-
-  if (!isRoot && loading) return <Loader />;
-  if (!isRoot && !settings) return <Navigate to="/" replace />;
-  return <ClubSite key={slug} settings={settings} isRoot={isRoot} />;
-}
-
-function ClubSite({ settings, isRoot }) {
   const navigate = useNavigate();
   const heroWrap = useRef(null);
   const heroMedia = useRef(null);
   useParallax(heroWrap, heroMedia);
   const tapLogo = useSecretTaps(() => navigate('/giris'));
 
-  const name = settings?.club_name || (isRoot ? 'Cüdo Klub' : '');
+  const { data } = useQuery(async () => {
+    if (!configured) return null;
+    const [settings, clubs] = await Promise.all([
+      getPublicClub(ROOT_CLUB).catch(() => null),
+      listClubs().catch(() => []),
+    ]);
+    return { settings, branches: clubs.filter((c) => c.id !== ROOT_CLUB && (c.address || c.phone)) };
+  });
+  const settings = data?.settings;
+  const branches = data?.branches || [];
+
+  const name = settings?.club_name || 'Cüdo Klub';
   const phone = settings?.phone ? normalizePhone(settings.phone) : '';
   const whatsapp = settings?.whatsapp ? normalizePhone(settings.whatsapp) : '';
   const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
@@ -197,6 +190,7 @@ function ClubSite({ settings, isRoot }) {
             <nav className="site-nav-links" aria-label="Səhifə bölmələri">
               <a href="#cudo">Cüdo</a>
               <a href="#melumat">Məşqlər</a>
+              {branches.length > 0 && <a href="#filiallar">Filiallar</a>}
               {hasContact && <a href="#elaqe">Əlaqə</a>}
             </nav>
           </div>
@@ -255,6 +249,25 @@ function ClubSite({ settings, isRoot }) {
           </div>
         </div>
       </Band>
+
+      {branches.length > 0 && (
+        <Band id="filiallar" tone="sky" title="Filiallar">
+          <div className="tiles">
+            {branches.map((branch, i) => {
+              const branchPhone = branch.phone ? normalizePhone(branch.phone) : '';
+              const lines = (branch.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
+              return (
+                <article className={`tile tile-${(i % 3) + 1}`} key={branch.id}>
+                  <h3>{branch.club_name}</h3>
+                  {branch.address && <p>{branch.address}</p>}
+                  {lines.length > 0 && <p>{lines.join(' · ')}</p>}
+                  {branchPhone && <p><a href={`tel:+994${branchPhone.slice(1)}`}>{formatPhone(branchPhone)}</a></p>}
+                </article>
+              );
+            })}
+          </div>
+        </Band>
+      )}
 
       <Band id="qalereya" tone="gold" title="Matın üzərində">
         <div className="gallery">

@@ -292,10 +292,10 @@ export async function attendanceMonthPdf(period, rows, trainingDays, settings) {
 export async function overallReportPdf({ title, rows, totals }) {
   const cell = (n, extra = {}) => ({ text: money(n), alignment: 'right', ...extra });
   const content = [
-    { text: 'Klublar üzrə gəlir və xərc', bold: true, fontSize: 11, margin: [0, 0, 0, 4] },
+    { text: 'Filiallar üzrə gəlir və xərc', bold: true, fontSize: 11, margin: [0, 0, 0, 4] },
     table(
       ['*', 80, 80, 80],
-      ['Klub', 'Gəlir', 'Xərc', 'Xalis'],
+      ['Filial', 'Gəlir', 'Xərc', 'Xalis'],
       [
         ...rows.map((r) => [r.club.club_name, cell(r.income), cell(r.expense), cell(r.net)]),
         [
@@ -309,7 +309,7 @@ export async function overallReportPdf({ title, rows, totals }) {
     { text: 'Cari ay üzrə ödəniş borcu', bold: true, fontSize: 11, margin: [0, 14, 0, 4] },
     table(
       ['*', 70, 60, 80],
-      ['Klub', 'Aktiv uşaq', 'Borclu', 'Borc'],
+      ['Filial', 'Aktiv uşaq', 'Borclu', 'Borc'],
       [
         ...rows.map((r) => [r.club.club_name, { text: String(r.active), alignment: 'right' }, { text: String(r.debtors), alignment: 'right' }, cell(r.debt)]),
         [
@@ -322,7 +322,7 @@ export async function overallReportPdf({ title, rows, totals }) {
     ),
   ];
   await save(
-    buildDoc('Ümumi maliyyə hesabatı', { club_name: 'Bütün klublar' }, content, { subtitle: title }),
+    buildDoc('Ümumi maliyyə hesabatı', { club_name: 'Bütün filiallar' }, content, { subtitle: title }),
     `umumi-hesabat-${slug(title)}.pdf`,
   );
 }

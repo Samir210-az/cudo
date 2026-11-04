@@ -15,6 +15,7 @@ export default function Settings() {
   const notify = useToast();
   const { session } = useAuth();
   const { current } = useClub();
+  const isRoot = current.id === ROOT_CLUB;
   const { data, loading, error, reload } = useQuery(fetchSettings, []);
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -29,20 +30,22 @@ export default function Settings() {
 
   const saveSettings = async (e) => {
     e.preventDefault();
-    if (!form.club_name.trim()) return notify('Klubun adını yazın.', 'error');
+    if (!form.club_name.trim()) return notify('Adı yazın.', 'error');
     if (form.phone && !isValidPhone(form.phone)) return notify('Telefonu düzgün yazın.', 'error');
-    if (form.whatsapp && !isValidPhone(form.whatsapp)) return notify('WhatsApp nömrəsini düzgün yazın.', 'error');
+    if (isRoot && form.whatsapp && !isValidPhone(form.whatsapp)) return notify('WhatsApp nömrəsini düzgün yazın.', 'error');
     const clean = (v) => v.trim() || null;
     setBusy(true);
     try {
       await persistSettings({
         club_name: form.club_name.trim(),
-        tagline: clean(form.tagline),
         phone: form.phone ? normalizePhone(form.phone) : null,
-        whatsapp: form.whatsapp ? normalizePhone(form.whatsapp) : null,
         address: clean(form.address),
         schedule: clean(form.schedule),
-        about: clean(form.about),
+        ...(isRoot && {
+          tagline: clean(form.tagline),
+          whatsapp: form.whatsapp ? normalizePhone(form.whatsapp) : null,
+          about: clean(form.about),
+        }),
         updated_at: new Date().toISOString(),
       });
       notify('Ayarlar saxlanıldı.');
@@ -81,21 +84,21 @@ export default function Settings() {
     <>
       <PageHead
         title="Ayarlar"
-        subtitle={`İctimai səhifə: ${window.location.host}${current.id === ROOT_CLUB ? '' : `/k/${current.id}`}`}
+        subtitle={isRoot ? 'Bu məlumatlar ictimai saytda göstərilir' : 'Ad, ünvan, telefon və cədvəl ictimai saytın «Filiallar» bölməsində göstərilir'}
       />
       <div className="stack">
         <form className="card" onSubmit={saveSettings}>
-          <h2>Klub məlumatları</h2>
+          <h2>{isRoot ? 'Klub məlumatları' : 'Filial məlumatları'}</h2>
           <div className="form-grid">
-            <Field label="Klubun adı"><input value={form.club_name} onChange={set('club_name')} required /></Field>
-            <Field label="Qısa təsvir"><input value={form.tagline} onChange={set('tagline')} /></Field>
+            <Field label={isRoot ? 'Klubun adı' : 'Filialın adı'}><input value={form.club_name} onChange={set('club_name')} required /></Field>
+            {isRoot && <Field label="Qısa təsvir"><input value={form.tagline} onChange={set('tagline')} /></Field>}
             <Field label="Telefon"><input type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} /></Field>
-            <Field label="WhatsApp nömrəsi"><input type="tel" inputMode="tel" value={form.whatsapp} onChange={set('whatsapp')} /></Field>
+            {isRoot && <Field label="WhatsApp nömrəsi"><input type="tel" inputMode="tel" value={form.whatsapp} onChange={set('whatsapp')} /></Field>}
             <Field label="Ünvan" wide><input value={form.address} onChange={set('address')} /></Field>
             <Field label="Məşq cədvəli" hint="Hər gün ayrıca sətirdə yazın" wide>
               <textarea value={form.schedule} onChange={set('schedule')} />
             </Field>
-            <Field label="Klub haqqında" wide><textarea value={form.about} onChange={set('about')} /></Field>
+            {isRoot && <Field label="Klub haqqında" wide><textarea value={form.about} onChange={set('about')} /></Field>}
           </div>
           <div className="form-actions">
             <button type="submit" className="btn primary" disabled={busy}>{busy ? 'Saxlanılır…' : 'Saxla'}</button>

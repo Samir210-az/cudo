@@ -17,7 +17,7 @@ const EXTRA_NAV = [
   { to: '/panel/heyet', label: 'Heyət və maaş', icon: 'briefcase', color: '#22b8ba' },
   { to: '/panel/hesabat', label: 'Hesabat', icon: 'chart', color: '#5b97ff' },
   { to: '/panel/umumi', label: 'Ümumi hesabat', icon: 'wallet', color: '#9a74f0' },
-  { to: '/panel/klublar', label: 'Klublar', icon: 'globe', color: '#e0a526' },
+  { to: '/panel/klublar', label: 'Filiallar', icon: 'globe', color: '#e0a526' },
   { to: '/panel/ayarlar', label: 'Ayarlar', icon: 'settings', color: '#98a4b8' },
 ];
 
@@ -31,7 +31,7 @@ function ClubSwitch() {
       className="club-select"
       value={current.id}
       onChange={(e) => switchClub(e.target.value)}
-      aria-label="Aktiv klub"
+      aria-label="Aktiv filial"
     >
       {clubs.map((c) => <option key={c.id} value={c.id}>{c.club_name}</option>)}
     </select>

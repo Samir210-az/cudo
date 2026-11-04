@@ -79,7 +79,7 @@ export default function Overall() {
 
   return (
     <>
-      <PageHead title="Ümumi hesabat" subtitle="Bütün klubların gəlir və xərci faktiki ödəniş tarixinə görə">
+      <PageHead title="Ümumi hesabat" subtitle="Bütün filialların gəlir və xərci faktiki ödəniş tarixinə görə">
         <button type="button" className="btn primary" onClick={exportPdf} disabled={!rows || exporting}>
           <Icon name="download" /> {exporting ? 'Hazırlanır…' : 'PDF'}
         </button>
@@ -108,11 +108,11 @@ export default function Overall() {
           </div>
 
           <section className="card">
-            <h2>Klublar üzrə — {title}</h2>
+            <h2>Filiallar üzrə — {title}</h2>
             <div className="tbl-wrap">
               <table className="tbl">
                 <thead>
-                  <tr><th>Klub</th><th className="num">Gəlir</th><th className="num">Xərc</th><th className="num">Xalis</th></tr>
+                  <tr><th>Filial</th><th className="num">Gəlir</th><th className="num">Xərc</th><th className="num">Xalis</th></tr>
                 </thead>
                 <tbody>
                   {rows.map((r) => (
@@ -141,7 +141,7 @@ export default function Overall() {
             <div className="tbl-wrap">
               <table className="tbl">
                 <thead>
-                  <tr><th>Klub</th><th className="num">Uşaq</th><th className="num">Borclu</th><th className="num">Borc</th></tr>
+                  <tr><th>Filial</th><th className="num">Uşaq</th><th className="num">Borclu</th><th className="num">Borc</th></tr>
                 </thead>
                 <tbody>
                   {rows.map((r) => (

@@ -22,10 +22,10 @@ export default function ClubSetup({ onDone }) {
   return (
     <main className="content">
       <section className="card">
-        <h2>Bir neçə klub dəstəyi</h2>
+        <h2>Bir neçə filial dəstəyi</h2>
         <p className="muted" style={{ margin: '8px 0 14px' }}>
-          Panel indi bir neçə klubu idarə edə bilir. Mövcud uşaqlar, ödənişlər, xərclər, davamiyyət və yarışlar
-          «Cüdo Klub» adı ilə yeni quruluşa köçürüləcək. Köhnə qeydlər silinmir.
+          Panel indi bir neçə filialı idarə edə bilir. Mövcud uşaqlar, ödənişlər, xərclər, davamiyyət və yarışlar
+          ilk filial kimi yeni quruluşa köçürüləcək. Köhnə qeydlər silinmir.
         </p>
         {error && <ErrorBox error={error} onRetry={start} />}
         <button type="button" className="btn primary" onClick={start} disabled={busy}>

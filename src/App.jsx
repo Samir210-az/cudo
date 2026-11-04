@@ -25,7 +25,6 @@ export default function App() {
     <Suspense fallback={<Loader />}>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/k/:slug" element={<Landing />} />
         <Route path="/giris" element={<Login />} />
         <Route path="/panel" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
