@@ -18,13 +18,13 @@ const HERO = '1785005845398-4e6af1243f05';
 const GALLERY = [
   { src: (w) => pexels(6765015, w), alt: 'İki uşaq dojoda cüdo məşqi edir' },
   { src: (w) => pexels(6765024, w), alt: 'Cüdoçu rəqibini atma texnikası ilə yerə yıxır' },
-  { src: (w) => unsplash('1782849159378-a068078370bf', w), alt: 'İki cüdoçu rəngli matın üzərində güləşir' },
+  { src: (w) => unsplash('1782849159378-a068078370bf', w), alt: 'İki cüdoçu rəngli tatami üzərində güləşir' },
 ];
 
 const TILES = [
   {
     title: 'Yıxılmağı öyrənmək',
-    text: 'Cüdoda ilk öyrənilən şey düzgün yıxılmaqdır (ukemi). Bu bacarıq zədə riskini azaldır və uşağa mat üzərində özünü əmin hiss etməyə kömək edir.',
+    text: 'Cüdoda ilk öyrənilən şey düzgün yıxılmaqdır (ukemi). Bu bacarıq zədə riskini azaldır və uşağa tatami üzərində özünü əmin hiss etməyə kömək edir.',
   },
   {
     title: 'Ağ kəmərdən qara kəmərə',
@@ -266,7 +266,7 @@ export default function Landing() {
         </div>
       </Band>
 
-      <Band id="qalereya" tone="gold" title="Matın üzərində">
+      <Band id="qalereya" tone="gold" title="Tatami üzərində">
         <div className="gallery">
           {GALLERY.map((item) => (
             <figure key={item.alt}>
@@ -288,7 +288,7 @@ export default function Landing() {
         srcSet={`${unsplash('1656653121475-e33829581294', 800)} 800w, ${unsplash('1656653121475-e33829581294', 1600)} 1600w`}
       >
         <p className="band-quote">
-          Sən də <span className="q2">matın üzərinə</span> <span className="q3">çıx.</span>
+          Sən də <span className="q2">tatami üzərinə</span> <span className="q3">çıx.</span>
         </p>
       </PhotoBand>
 
