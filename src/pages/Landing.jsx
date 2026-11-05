@@ -167,7 +167,7 @@ export default function Landing() {
   const scheduleLines = savedSchedule.length ? savedSchedule : DEFAULT_SCHEDULE;
   const about = settings?.about || DEFAULT_ABOUT;
   const contactBranches = [
-    ...(settings?.address ? [{ id: ROOT_CLUB, club_name: mainName, address: settings.address }] : []),
+    ...(settings?.address || settings?.phone ? [{ id: ROOT_CLUB, club_name: mainName, address: settings.address, phone: settings.phone }] : []),
     ...branches.filter((b) => b.address || b.phone),
   ];
   const scheduleGroups = [
