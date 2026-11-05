@@ -39,6 +39,8 @@ const TILES = [
 const TIME_RE = /\d{1,2}[:.]\d{2}/;
 
 const CONTACT_PHONE = '0553753535';
+const WHATSAPP_MESSAGE = 'Salam! Hünər İdman Klubu haqqında məlumat almaq istəyirəm. Uşağım üçün cüdo məşqlərinə yazılmaq mümkündürmü?';
+const WHATSAPP_URL = `https://wa.me/994${CONTACT_PHONE.slice(1)}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 const MAIN_BRANCH_NAME = 'Gənclik filialı';
 const DEFAULT_SCHEDULE = ['Bazar ertəsi', 'Çərşənbə', 'Cümə'];
 const DEFAULT_ABOUT = 'Məşqlər peşəkar məşqçilər tərəfindən keçirilir.';
@@ -216,7 +218,7 @@ export default function Landing() {
             <a className="btn primary" href={`tel:+994${CONTACT_PHONE.slice(1)}`}>
               <Icon name="phone" /> Zəng et
             </a>
-            <a className="btn" href={`https://wa.me/994${CONTACT_PHONE.slice(1)}`} target="_blank" rel="noopener noreferrer">
+            <a className="btn" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
               WhatsApp
             </a>
           </div>
@@ -296,7 +298,7 @@ export default function Landing() {
           <a className="contact-phone" href={`tel:+994${CONTACT_PHONE.slice(1)}`}>
             {formatPhone(CONTACT_PHONE)}
           </a>
-          <a className="btn" href={`https://wa.me/994${CONTACT_PHONE.slice(1)}`} target="_blank" rel="noopener noreferrer">
+          <a className="btn" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
             WhatsApp-da yaz
           </a>
           {contactBranches.length > 0 && (
