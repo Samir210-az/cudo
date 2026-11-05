@@ -1,4 +1,4 @@
-const CACHE = 'cudo-v1';
+const CACHE = 'cudo-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
