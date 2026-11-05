@@ -31,12 +31,13 @@ export default function ChildCard() {
   const [scan, setScan] = useState(null);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [child, rawEntries, payments, competitions, attendanceDays] = await Promise.all([
+    const [child, rawEntries, payments, competitions, attendanceDays, scanUrl] = await Promise.all([
       get('children', id),
       list('competitionEntries', eq('child_id', id)),
       list('payments', eq('child_id', id)),
       list('competitions'),
       list('attendance'),
+      getScan(id).catch(() => null),
     ]);
     const period = currentPeriod();
     const nextPeriod = addMonths(period, 1);
@@ -52,23 +53,13 @@ export default function ChildCard() {
       .map((e) => ({ ...e, competitions: byId.get(e.competition_id) }))
       .sort((a, b) => b.competitions.held_on.localeCompare(a.competitions.held_on));
     payments.sort((a, b) => b.period_month.localeCompare(a.period_month) || b.paid_on.localeCompare(a.paid_on));
-    return { child, entries, payments, attendance };
+    return { child, entries, payments, attendance, scanUrl };
   }, [id]);
 
   if (loading && !data) return <Loader />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  const { child, entries, payments, attendance } = data;
+  const { child, entries, payments, attendance, scanUrl } = data;
   const belt = beltStyle(child.belt);
-
-  const openScan = async () => {
-    try {
-      const dataUrl = await getScan(child.id);
-      if (!dataUrl) return notify('Skan tapılmadı.', 'error');
-      setScan(dataUrl);
-    } catch (err) {
-      notify('Skan açılmadı: ' + err.message, 'error');
-    }
-  };
 
   const exportPdf = async () => {
     setExporting(true);
@@ -121,7 +112,7 @@ export default function ChildCard() {
         return notify('Ödəniş tarixçəsi olan uşağı silmək olmaz. Əvəzinə statusunu "Passiv" edin.', 'error');
       }
       await removeWhere('competitionEntries', 'child_id', id);
-      if (child.has_scan) await removeScan(id);
+      await removeScan(id);
       await remove('children', id);
       notify('Uşaq silindi.');
       navigate('/panel/usaqlar', { replace: true });
@@ -167,8 +158,10 @@ export default function ChildCard() {
             <Info label="Vəsiqə seriya və nömrəsi">{child.id_series}</Info>
             <Info label="FİN">{child.id_fin}</Info>
             <Info label="Vəsiqənin skanı">
-              {child.has_scan ? (
-                <button type="button" className="btn sm" onClick={openScan}>Göstər</button>
+              {scanUrl ? (
+                <button type="button" className="scan-thumb" onClick={() => setScan(scanUrl)} aria-label="Vəsiqənin skanını böyüt">
+                  <img src={scanUrl} alt="Vəsiqənin skanı" />
+                </button>
               ) : null}
             </Info>
           </dl>
