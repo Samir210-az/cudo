@@ -180,7 +180,7 @@ export default function Landing() {
   ];
 
   useEffect(() => {
-    document.title = name;
+    document.title = `Uşaqlar üçün cüdo — ${name}, Bakı`;
   }, [name]);
 
   return (

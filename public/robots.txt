@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cudo.aze-ai.az/sitemap.xml
