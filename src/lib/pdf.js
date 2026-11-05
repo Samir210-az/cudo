@@ -156,6 +156,7 @@ export async function childCardPdf(child, { entries, payments }, settings) {
     pair('Çəki', child.weight_kg ? `${child.weight_kg} kq` : null),
     pair('Valideyn', child.parent_name),
     pair('Valideyn telefonu', child.parent_phone ? formatPhone(child.parent_phone) : null),
+    pair('Ünvan', child.address),
     pair('Aylıq ödəniş', money(child.monthly_fee)),
     pair('Status', child.status),
   ];

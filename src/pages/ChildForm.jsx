@@ -11,7 +11,7 @@ import { fileToScan } from '../lib/image';
 const EMPTY = {
   first_name: '', last_name: '', father_name: '', birth_date: '', gender: '',
   id_series: '', id_fin: '', school: '', grade: '', joined_at: todayISO(),
-  belt: '', weight_kg: '', parent_name: '', parent_phone: '', monthly_fee: '',
+  belt: '', weight_kg: '', parent_name: '', parent_phone: '', address: '', monthly_fee: '',
   status: 'aktiv', note: '',
 };
 
@@ -86,6 +86,7 @@ export default function ChildForm() {
       weight_kg: form.weight_kg === '' ? null : Number(form.weight_kg),
       parent_name: text(form.parent_name),
       parent_phone: form.parent_phone ? normalizePhone(form.parent_phone) : null,
+      address: text(form.address),
       monthly_fee: Number(form.monthly_fee || 0),
       status: form.status,
       note: text(form.note),
@@ -216,6 +217,9 @@ export default function ChildForm() {
           </Field>
           <Field label="Valideynin telefonu">
             <input type="tel" inputMode="tel" value={form.parent_phone} onChange={set('parent_phone')} placeholder="055 123 45 67" />
+          </Field>
+          <Field label="Ünvan" wide>
+            <input value={form.address} onChange={set('address')} autoComplete="street-address" />
           </Field>
           <Field label="Qeyd" wide>
             <textarea value={form.note} onChange={set('note')} />
