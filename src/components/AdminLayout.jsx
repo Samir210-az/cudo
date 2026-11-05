@@ -73,7 +73,7 @@ function Shell() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <img className="brand-logo" src="/logo-128.webp" alt="" width="28" height="34" />
+          <img className="brand-logo" src="/logo-128.webp" alt="" width="65" height="34" />
           <ClubSwitch />
         </div>
         <nav aria-label="Əsas menyu">
@@ -99,7 +99,7 @@ function Shell() {
 
       <header className="topbar">
         <div className="brand">
-          <img className="brand-logo" src="/logo-128.webp" alt="" width="28" height="34" />
+          <img className="brand-logo" src="/logo-128.webp" alt="" width="65" height="34" />
           <ClubSwitch />
         </div>
       </header>

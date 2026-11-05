@@ -106,7 +106,7 @@ function useParallax(wrapRef, mediaRef, { factor = 0.22, centered = false } = {}
 function Logo({ height }) {
   return (
     <span className="logo-wrap" style={{ height }}>
-      <img src="/logo-128.webp" alt="" width={Math.round(height * 0.817)} height={height} />
+      <img src="/logo-128.webp" alt="" width={Math.round(height * 1.9)} height={height} />
     </span>
   );
 }

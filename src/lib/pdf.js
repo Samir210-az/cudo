@@ -73,7 +73,7 @@ function buildDoc(title, settings, content, { landscape = false, subtitle } = {}
       fontSize: 8,
     }),
     content: [
-      { image: 'logo', width: 44, alignment: 'center' },
+      { image: 'logo', width: 96, alignment: 'center' },
       { text: club, fontSize: 14, bold: true, alignment: 'center', color: '#0e1a2b', margin: [0, 6, 0, 8] },
       {
         canvas: [{ type: 'line', x1: 0, y1: 0, x2: landscape ? 770 : 523, y2: 0, lineWidth: 1.2, lineColor: TITLE_COLOR }],
