@@ -31,8 +31,8 @@ const TILES = [
     text: 'Hər kəmər dərəcəsi imtahanla qazanılır. Uşaq öz irəliləyişini gözlə görür və növbəti hədəfi bilir.',
   },
   {
-    title: 'Çəki kateqoriyaları',
-    text: 'Cüdo yarışlarında uşaqlar çəkiyə görə kateqoriyalara bölünür və eyni çəkidə rəqiblərlə qarşılaşır.',
+    title: 'Çəki və yaş kateqoriyaları',
+    text: 'Cüdo yarışlarında uşaqlar yaşa və çəkiyə görə kateqoriyalara bölünür və eyni yaşda, eyni çəkidə rəqiblərlə qarşılaşır.',
   },
 ];
 
