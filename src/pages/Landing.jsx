@@ -38,6 +38,8 @@ const TILES = [
 
 const TIME_RE = /\d{1,2}[:.]\d{2}/;
 
+const CONTACT_PHONE = '0553753535';
+const MAIN_BRANCH_NAME = 'Gənclik filialı';
 const DEFAULT_SCHEDULE = ['Bazar ertəsi', 'Çərşənbə', 'Cümə'];
 const DEFAULT_ABOUT = 'Məşqlər peşəkar məşqçilər tərəfindən keçirilir.';
 
@@ -160,15 +162,16 @@ export default function Landing() {
   const branches = data?.branches || [];
 
   const name = BRAND;
-  const phone = settings?.phone ? normalizePhone(settings.phone) : '';
-  const whatsapp = settings?.whatsapp ? normalizePhone(settings.whatsapp) : '';
+  const mainName = settings?.club_name && settings.club_name !== BRAND ? settings.club_name : MAIN_BRANCH_NAME;
   const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
   const scheduleLines = savedSchedule.length ? savedSchedule : DEFAULT_SCHEDULE;
   const about = settings?.about || DEFAULT_ABOUT;
-  const contactBranches = branches.filter((b) => b.address || b.phone);
-  const hasContact = Boolean(settings?.address || phone || contactBranches.length);
+  const contactBranches = [
+    ...(settings?.address ? [{ id: ROOT_CLUB, club_name: mainName, address: settings.address }] : []),
+    ...branches.filter((b) => b.address || b.phone),
+  ];
   const scheduleGroups = [
-    { id: ROOT_CLUB, name: settings?.club_name || name, lines: scheduleLines },
+    { id: ROOT_CLUB, name: mainName, lines: scheduleLines },
     ...branches
       .map((b) => ({ id: b.id, name: b.club_name, lines: (b.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean) }))
       .filter((g) => g.lines.length),
@@ -200,7 +203,7 @@ export default function Landing() {
             <nav className="site-nav-links" aria-label="Səhifə bölmələri">
               <a href="#cudo">Cüdo</a>
               <a href="#melumat">Məşqlər</a>
-              {hasContact && <a href="#elaqe">Əlaqə</a>}
+              <a href="#elaqe">Əlaqə</a>
             </nav>
           </div>
         </div>
@@ -210,16 +213,12 @@ export default function Landing() {
           <h1>{name}</h1>
           <p>{settings?.tagline || 'Güc, çeviklik və özünə inam.'}</p>
           <div className="hero-actions">
-            {phone && (
-              <a className="btn primary" href={`tel:+994${phone.slice(1)}`}>
-                <Icon name="phone" /> Zəng et
-              </a>
-            )}
-            {whatsapp && (
-              <a className="btn" href={`https://wa.me/994${whatsapp.slice(1)}`} target="_blank" rel="noopener noreferrer">
-                WhatsApp
-              </a>
-            )}
+            <a className="btn primary" href={`tel:+994${CONTACT_PHONE.slice(1)}`}>
+              <Icon name="phone" /> Zəng et
+            </a>
+            <a className="btn" href={`https://wa.me/994${CONTACT_PHONE.slice(1)}`} target="_blank" rel="noopener noreferrer">
+              WhatsApp
+            </a>
           </div>
         </div>
       </header>
@@ -292,50 +291,39 @@ export default function Landing() {
         </p>
       </PhotoBand>
 
-      {hasContact && (
-        <Band id="elaqe" tone="red" title="Əlaqə">
-          <div className="contact">
-            {phone && (
-              <a className="contact-phone" href={`tel:+994${phone.slice(1)}`}>
-                {formatPhone(phone)}
-              </a>
-            )}
-            {settings?.address && (
-              <p className="contact-address">
-                <Icon name="pin" /> {settings.address}
-              </p>
-            )}
-            {whatsapp && (
-              <a className="btn" href={`https://wa.me/994${whatsapp.slice(1)}`} target="_blank" rel="noopener noreferrer">
-                WhatsApp-da yaz
-              </a>
-            )}
-            {contactBranches.length > 0 && (
-              <div className="branches">
-                <h3 className="sub">Filiallar</h3>
-                {contactBranches.map((branch) => {
-                  const branchPhone = branch.phone ? normalizePhone(branch.phone) : '';
-                  return (
-                    <article className="branch" key={branch.id}>
-                      <h4>{branch.club_name}</h4>
-                      {branch.address && (
-                        <p className="contact-address">
-                          <Icon name="pin" /> {branch.address}
-                        </p>
-                      )}
-                      {branchPhone && (
-                        <a className="branch-phone" href={`tel:+994${branchPhone.slice(1)}`}>
-                          {formatPhone(branchPhone)}
-                        </a>
-                      )}
-                    </article>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </Band>
-      )}
+      <Band id="elaqe" tone="red" title="Əlaqə">
+        <div className="contact">
+          <a className="contact-phone" href={`tel:+994${CONTACT_PHONE.slice(1)}`}>
+            {formatPhone(CONTACT_PHONE)}
+          </a>
+          <a className="btn" href={`https://wa.me/994${CONTACT_PHONE.slice(1)}`} target="_blank" rel="noopener noreferrer">
+            WhatsApp-da yaz
+          </a>
+          {contactBranches.length > 0 && (
+            <div className="branches">
+              <h3 className="sub">Filiallar</h3>
+              {contactBranches.map((branch) => {
+                const branchPhone = branch.phone ? normalizePhone(branch.phone) : '';
+                return (
+                  <article className="branch" key={branch.id}>
+                    <h4>{branch.club_name}</h4>
+                    {branch.address && (
+                      <p className="contact-address">
+                        <Icon name="pin" /> {branch.address}
+                      </p>
+                    )}
+                    {branchPhone && (
+                      <a className="branch-phone" href={`tel:+994${branchPhone.slice(1)}`}>
+                        {formatPhone(branchPhone)}
+                      </a>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Band>
 
       <footer className="site-foot">
         <Logo height={72} />

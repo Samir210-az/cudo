@@ -31,8 +31,7 @@ export default function Settings() {
   const saveSettings = async (e) => {
     e.preventDefault();
     if (!form.club_name.trim()) return notify('Adı yazın.', 'error');
-    if (form.phone && !isValidPhone(form.phone)) return notify('Telefonu düzgün yazın.', 'error');
-    if (isRoot && form.whatsapp && !isValidPhone(form.whatsapp)) return notify('WhatsApp nömrəsini düzgün yazın.', 'error');
+    if (!isRoot && form.phone && !isValidPhone(form.phone)) return notify('Telefonu düzgün yazın.', 'error');
     const clean = (v) => v.trim() || null;
     setBusy(true);
     try {
@@ -84,7 +83,7 @@ export default function Settings() {
     <>
       <PageHead
         title="Ayarlar"
-        subtitle={isRoot ? 'Bu məlumatlar ictimai saytda göstərilir' : 'Ad, ünvan, telefon və cədvəl ictimai saytın «Filiallar» bölməsində göstərilir'}
+        subtitle={isRoot ? 'Ünvan sayta «Gənclik filialı» kimi düşür. Əsas telefon və WhatsApp nömrəsi kodda sabitdir' : 'Ad, ünvan, telefon və cədvəl ictimai saytın «Filiallar» bölməsində göstərilir'}
       />
       <div className="stack">
         <form className="card" onSubmit={saveSettings}>
@@ -92,8 +91,7 @@ export default function Settings() {
           <div className="form-grid">
             <Field label="Filialın adı" hint={isRoot ? 'Saytın əsas başlığı dəyişmir, ad yalnız məşq cədvəli və PDF-lərdə görünür' : undefined}><input value={form.club_name} onChange={set('club_name')} required /></Field>
             {isRoot && <Field label="Qısa təsvir"><input value={form.tagline} onChange={set('tagline')} /></Field>}
-            <Field label="Telefon"><input type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} /></Field>
-            {isRoot && <Field label="WhatsApp nömrəsi"><input type="tel" inputMode="tel" value={form.whatsapp} onChange={set('whatsapp')} /></Field>}
+            {!isRoot && <Field label="Telefon"><input type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} /></Field>}
             <Field label="Ünvan" wide><input value={form.address} onChange={set('address')} /></Field>
             <Field label="Məşq cədvəli" hint="Günləri bir sətirdə, saatı ayrı sətirdə yazın. Saat yazılan sətir saytda rənglə seçilir" wide>
               <textarea value={form.schedule} onChange={set('schedule')} />
