@@ -209,7 +209,7 @@ a.row-title:hover { color: var(--red); }
 .site-nav { position: absolute; z-index: 5; inset: 0 0 auto 0; color: #fff; }
 .site-nav-inner { max-width: 1180px; margin: 0 auto; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .logo-btn { background: none; border: 0; padding: 0; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
-.nav-brand { display: flex; align-items: center; gap: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.95rem; font-weight: 800; }
+.nav-brand { display: flex; align-items: center; gap: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 1.2rem; font-weight: 800; }
 .brand-logo { height: 34px; width: auto; display: block; }
 .site-nav a { color: #fff; font-weight: 600; font-size: 0.92rem; }
 .site-nav-links { display: none; gap: 28px; }

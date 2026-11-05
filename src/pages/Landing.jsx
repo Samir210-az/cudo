@@ -197,8 +197,8 @@ export default function Landing() {
         <div className="site-nav">
           <div className="site-nav-inner">
             <button type="button" className="logo-btn nav-brand" onClick={tapLogo} aria-label={name}>
-              <Logo height={54} />
-              <span>{name}</span>
+              <Logo height={66} />
+              <span>İdman klubu</span>
             </button>
             <nav className="site-nav-links" aria-label="Səhifə bölmələri">
               <a href="#cudo">Cüdo</a>
