@@ -90,7 +90,7 @@ export default function Settings() {
         <form className="card" onSubmit={saveSettings}>
           <h2>{isRoot ? 'Klub məlumatları' : 'Filial məlumatları'}</h2>
           <div className="form-grid">
-            <Field label={isRoot ? 'Klubun adı' : 'Filialın adı'}><input value={form.club_name} onChange={set('club_name')} required /></Field>
+            <Field label="Filialın adı" hint={isRoot ? 'Saytın əsas başlığı dəyişmir, ad yalnız məşq cədvəli və PDF-lərdə görünür' : undefined}><input value={form.club_name} onChange={set('club_name')} required /></Field>
             {isRoot && <Field label="Qısa təsvir"><input value={form.tagline} onChange={set('tagline')} /></Field>}
             <Field label="Telefon"><input type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} /></Field>
             {isRoot && <Field label="WhatsApp nömrəsi"><input type="tel" inputMode="tel" value={form.whatsapp} onChange={set('whatsapp')} /></Field>}

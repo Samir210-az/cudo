@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/ui';
 import { ROOT_CLUB, getPublicClub, listClubs } from '../lib/db';
+import { BRAND } from '../lib/settings';
 import { configured } from '../lib/firebase';
 import { formatPhone, normalizePhone } from '../lib/format';
 import { useQuery } from '../lib/hooks';
@@ -158,7 +159,7 @@ export default function Landing() {
   const settings = data?.settings;
   const branches = data?.branches || [];
 
-  const name = settings?.club_name || 'HÜNƏR İDMAN KLUBU';
+  const name = BRAND;
   const phone = settings?.phone ? normalizePhone(settings.phone) : '';
   const whatsapp = settings?.whatsapp ? normalizePhone(settings.whatsapp) : '';
   const savedSchedule = (settings?.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean);
@@ -167,7 +168,7 @@ export default function Landing() {
   const contactBranches = branches.filter((b) => b.address || b.phone);
   const hasContact = Boolean(settings?.address || phone || contactBranches.length);
   const scheduleGroups = [
-    { id: ROOT_CLUB, name, lines: scheduleLines },
+    { id: ROOT_CLUB, name: settings?.club_name || name, lines: scheduleLines },
     ...branches
       .map((b) => ({ id: b.id, name: b.club_name, lines: (b.schedule || '').split('\n').map((l) => l.trim()).filter(Boolean) }))
       .filter((g) => g.lines.length),
