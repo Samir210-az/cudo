@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components/ui';
-import { calcAge, fullName, groupsOf, gradeLabel, trainingDuration } from '../lib/format';
+import { calcAge, currentPeriod, fullName, groupsOf, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import BeltIcon from '../components/BeltIcon';
 import BulkChildren from '../components/BulkChildren';
 import GroupPicker from '../components/GroupPicker';
+import { isFrozen } from '../lib/finance';
 import { beltRank } from '../lib/belts';
 import { beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
@@ -16,6 +17,7 @@ export default function Children() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('aktiv');
   const [group, setGroup] = useState('');
+  const [view, setView] = useState('aktiv');
   const [withId, setWithId] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [bulk, setBulk] = useState(false);
@@ -25,15 +27,23 @@ export default function Children() {
     [],
   );
 
+  const period = currentPeriod();
   const filtered = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase('az');
     return [...(data || [])].sort((a, b) => beltRank(b.belt) - beltRank(a.belt)).filter((c) => {
-      if (status !== 'hamısı' && c.status !== status) return false;
+      const frozen = isFrozen(c, period);
+      if (view === 'donmus') {
+        if (c.status !== 'aktiv' || !frozen) return false;
+      } else {
+        if (status !== 'hamısı' && c.status !== status) return false;
+        if (status === 'aktiv' && frozen) return false;
+      }
       if (group && c.training_time !== group) return false;
       if (!needle) return true;
       return `${fullName(c)} ${c.father_name || ''} ${c.school || ''}`.toLocaleLowerCase('az').includes(needle);
     });
-  }, [data, q, status, group]);
+  }, [data, q, status, group, view, period]);
+  const frozenCount = useMemo(() => (data || []).filter((c) => c.status === 'aktiv' && isFrozen(c, period)).length, [data, period]);
   const groups = useMemo(() => groupsOf(data || []), [data]);
 
   const exportPdf = async () => {
@@ -65,6 +75,13 @@ export default function Children() {
         </Link>
       </PageHead>
 
+      <div className="tabs" role="tablist" style={{ marginBottom: 12 }}>
+        <button type="button" role="tab" className="tab" aria-selected={view === 'aktiv'} onClick={() => setView('aktiv')}>Aktiv</button>
+        <button type="button" role="tab" className="tab" aria-selected={view === 'donmus'} onClick={() => setView('donmus')}>
+          Dondurulmuşlar{frozenCount ? ` (${frozenCount})` : ''}
+        </button>
+      </div>
+
       <div className="card">
         <GroupPicker groups={groups} value={group} onChange={setGroup} allLabel="Bütün qruplar" />
         <div className="form-grid" style={{ marginBottom: 8 }}>
@@ -72,11 +89,13 @@ export default function Children() {
             <Icon name="search" size={18} />
             <input type="search" placeholder="Ad, soyad və ya məktəb üzrə axtar" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Axtarış" />
           </div>
+          {view === 'aktiv' && (
           <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
             <option value="aktiv">Aktiv uşaqlar</option>
             <option value="passiv">Passiv uşaqlar</option>
             <option value="hamısı">Hamısı</option>
           </select>
+          )}
         </div>
         <label className="check" style={{ marginBottom: 6 }}>
           <input type="checkbox" checked={withId} onChange={(e) => setWithId(e.target.checked)} />
@@ -108,7 +127,7 @@ export default function Children() {
           </div>
         ) : (
           <Empty>
-            {data.length ? 'Axtarışa uyğun uşaq tapılmadı.' : 'Hələ uşaq əlavə edilməyib.'}
+            {view === 'donmus' ? 'Dondurulmuş uşaq yoxdur.' : data.length ? 'Axtarışa uyğun uşaq tapılmadı.' : 'Hələ uşaq əlavə edilməyib.'}
           </Empty>
         )}
       </div>

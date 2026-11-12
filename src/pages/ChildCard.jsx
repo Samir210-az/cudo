@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, Modal, PageHead, useToast } from '../components/ui';
 import BeltIcon from '../components/BeltIcon';
+import FreezeModal from '../components/FreezeModal';
 import PaymentModal from '../components/PaymentModal';
-import { sum } from '../lib/finance';
+import { isFrozen, sum } from '../lib/finance';
 import {
   addMonths, calcAge, currentPeriod, fmtDate, fmtMoney, fmtPeriod, formatPhone, fullName, gradeLabel, todayISO, trainingDuration,
 } from '../lib/format';
@@ -27,6 +28,7 @@ export default function ChildCard() {
   const notify = useToast();
   const [paying, setPaying] = useState(false);
   const [beltOpen, setBeltOpen] = useState(false);
+  const [freezeOpen, setFreezeOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [scan, setScan] = useState(null);
 
@@ -125,11 +127,14 @@ export default function ChildCard() {
     <>
       <PageHead
         title={<span className="title-belt"><BeltIcon name={child.belt} size={26} />{fullName(child)}</span>}
-        subtitle={`${calcAge(child.birth_date)} yaş · ${child.status === 'aktiv' ? 'Aktiv' : 'Passiv'}`}
+        subtitle={`${calcAge(child.birth_date)} yaş · ${child.status === 'aktiv' ? 'Aktiv' : 'Passiv'}${isFrozen(child, currentPeriod()) ? ' · Dondurulub' : ''}`}
         back={<Link className="back-link" to="/panel/usaqlar">← Uşaqlar</Link>}
       >
         <button type="button" className="btn" onClick={() => setBeltOpen(true)}>Kəmər ver</button>
         <button type="button" className="btn" onClick={() => setPaying(true)}>Ödəniş qəbul et</button>
+        <button type="button" className="btn" onClick={() => setFreezeOpen(true)}>
+          {isFrozen(child, currentPeriod()) ? 'Dondurma' : 'Dondur'}
+        </button>
         <button type="button" className="btn" onClick={exportPdf} disabled={exporting}>
           <Icon name="download" /> PDF
         </button>
@@ -179,6 +184,11 @@ export default function ChildCard() {
             </Info>
             <Info label="Çəki">{child.weight_kg ? `${child.weight_kg} kq` : null}</Info>
             <Info label="Aylıq ödəniş">{fmtMoney(child.monthly_fee)}</Info>
+            {(child.freezes || []).length > 0 && (
+              <Info label="Dondurulma">
+                {child.freezes.map((f) => `${fmtPeriod(f.from)} — ${f.to ? fmtPeriod(f.to) : 'davam edir'}`).join('; ')}
+              </Info>
+            )}
           </dl>
         </section>
 
@@ -278,6 +288,8 @@ export default function ChildCard() {
           )}
         </Modal>
       )}
+
+      {freezeOpen && <FreezeModal child={child} onClose={() => setFreezeOpen(false)} onSaved={reload} />}
 
       {paying && (
         <PaymentModal
