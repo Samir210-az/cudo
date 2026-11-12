@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components/ui';
-import { calcAge, currentPeriod, fullName, groupsOf, gradeLabel, trainingDuration } from '../lib/format';
+import { calcAge, fullName, groupsOf, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import BeltIcon from '../components/BeltIcon';
 import BulkChildren from '../components/BulkChildren';
 import GroupPicker from '../components/GroupPicker';
-import { isFrozen } from '../lib/finance';
+import { openFreeze } from '../lib/finance';
 import { beltRank } from '../lib/belts';
 import { beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
@@ -27,11 +27,10 @@ export default function Children() {
     [],
   );
 
-  const period = currentPeriod();
   const filtered = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase('az');
     return [...(data || [])].sort((a, b) => beltRank(b.belt) - beltRank(a.belt)).filter((c) => {
-      const frozen = isFrozen(c, period);
+      const frozen = Boolean(openFreeze(c));
       if (view === 'donmus') {
         if (c.status !== 'aktiv' || !frozen) return false;
       } else {
@@ -42,8 +41,8 @@ export default function Children() {
       if (!needle) return true;
       return `${fullName(c)} ${c.father_name || ''} ${c.school || ''}`.toLocaleLowerCase('az').includes(needle);
     });
-  }, [data, q, status, group, view, period]);
-  const frozenCount = useMemo(() => (data || []).filter((c) => c.status === 'aktiv' && isFrozen(c, period)).length, [data, period]);
+  }, [data, q, status, group, view]);
+  const frozenCount = useMemo(() => (data || []).filter((c) => c.status === 'aktiv' && openFreeze(c)).length, [data]);
   const groups = useMemo(() => groupsOf(data || []), [data]);
 
   const exportPdf = async () => {

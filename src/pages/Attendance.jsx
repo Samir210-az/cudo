@@ -3,7 +3,7 @@ import { Empty, ErrorBox, Icon, Loader, MonthPicker, PageHead, Stat, useToast } 
 import { byName, eq, getAttendance, list, range, saveAttendance } from '../lib/db';
 import { addMonths, currentPeriod, fmtPeriod, fullName, groupsOf, pad, todayISO } from '../lib/format';
 import GroupPicker from '../components/GroupPicker';
-import { isFrozen } from '../lib/finance';
+import { isFrozenOn } from '../lib/finance';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
 
@@ -24,8 +24,7 @@ function DayView() {
 
   const { data, loading, error, reload } = useQuery(async () => {
     const [kids, saved] = await Promise.all([list('children', eq('status', 'aktiv')), getAttendance(date)]);
-    const month = `${date.slice(0, 7)}-01`;
-    return { kids: kids.filter((k) => !isFrozen(k, month)).sort(byName), saved: saved || [] };
+    return { kids: kids.filter((k) => !isFrozenOn(k, date)).sort(byName), saved: saved || [] };
   }, [date]);
 
   useEffect(() => {
@@ -164,7 +163,7 @@ function MonthView() {
       list('children', eq('status', 'aktiv')),
       list('attendance', ...range('date', period, addMonths(period, 1))),
     ]);
-    return { kids: kids.filter((k) => !isFrozen(k, period)).sort(byName), days };
+    return { kids: kids.filter((k) => !isFrozenOn(k, period)).sort(byName), days };
   }, [period]);
 
   const summary = useMemo(() => {

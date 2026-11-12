@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Modal, useToast } from './ui';
 import { update } from '../lib/db';
-import { addMonths, currentPeriod, fmtPeriod } from '../lib/format';
+import { addMonths, fmtDate, fmtPeriod, todayISO } from '../lib/format';
 
-const monthValue = (iso) => iso.slice(0, 7);
+const monthStart = (iso) => `${iso.slice(0, 7)}-01`;
+export const firstFrozenMonth = (from) => (from.slice(8, 10) === '01' ? from : addMonths(from, 1));
 
-export default function FreezeModal({ child, onClose, onSaved }) {
+export default function FreezeModal({ child, lastPaid, onClose, onSaved }) {
   const notify = useToast();
   const freezes = child.freezes || [];
   const open = freezes.find((f) => !f.to);
-  const [from, setFrom] = useState(monthValue(currentPeriod()));
-  const [back, setBack] = useState(monthValue(currentPeriod()));
+  const [from, setFrom] = useState(lastPaid || todayISO());
+  const [back, setBack] = useState(todayISO());
   const [busy, setBusy] = useState(false);
 
   const save = async (next, message) => {
@@ -26,18 +27,15 @@ export default function FreezeModal({ child, onClose, onSaved }) {
     }
   };
 
-  const freeze = () => {
-    save([...freezes, { from: `${from}-01`, to: null }], 'Dondurma yazıldı, bu aylar üçün borc hesablanmayacaq.');
-  };
+  const freeze = () => save([...freezes, { from, to: null, back: null }], 'Dondurma yazıldı, bu tarixdən sonrakı aylara borc hesablanmayacaq.');
 
-  const resume = () => {
-    const firstCharged = `${back}-01`;
-    const last = addMonths(firstCharged, -1);
+  const activate = () => {
+    const lastFrozen = addMonths(monthStart(back), -1);
     const next =
-      last < open.from
+      firstFrozenMonth(open.from) > lastFrozen
         ? freezes.filter((f) => f !== open)
-        : freezes.map((f) => (f === open ? { ...f, to: last } : f));
-    save(next, `${fmtPeriod(firstCharged)} ayından borc yenidən hesablanacaq.`);
+        : freezes.map((f) => (f === open ? { ...f, to: lastFrozen, back } : f));
+    save(next, `Uşaq aktiv edildi, ${fmtPeriod(monthStart(back))} ayından borc yenidən hesablanacaq.`);
   };
 
   const remove = (target) => save(freezes.filter((f) => f !== target), 'Dondurma silindi.');
@@ -45,7 +43,7 @@ export default function FreezeModal({ child, onClose, onSaved }) {
   return (
     <Modal title="Dondurma" onClose={onClose}>
       <p className="muted">
-        Dondurulmuş aylar üçün uşağa borc hesablanmır. Uşaq məşqə qayıdanda "Məşqə qayıtdı" düyməsi ilə yenidən aktiv edin.
+        Dondurulmuş tarixdən sonrakı aylara borc hesablanmır. Həmin ayın özü artıq ödənilmiş sayılır.
       </p>
 
       {freezes.length > 0 && (
@@ -53,7 +51,7 @@ export default function FreezeModal({ child, onClose, onSaved }) {
           {freezes.map((f) => (
             <div className="row" key={`${f.from}-${f.to}`}>
               <span className="row-main">
-                {fmtPeriod(f.from)} — {f.to ? fmtPeriod(f.to) : 'davam edir'}
+                {fmtDate(f.from)} — {f.back ? fmtDate(f.back) : f.to ? fmtPeriod(f.to) : 'davam edir'}
               </span>
               <button type="button" className="btn sm" onClick={() => remove(f)} disabled={busy}>Sil</button>
             </div>
@@ -64,22 +62,22 @@ export default function FreezeModal({ child, onClose, onSaved }) {
       {open ? (
         <>
           <label className="muted" style={{ display: 'block' }}>
-            Borc hansı aydan yenidən hesablansın
-            <input type="month" value={back} onChange={(e) => setBack(e.target.value)} />
+            Uşaq məşqə hansı tarixdə qayıdıb
+            <input type="date" value={back} onChange={(e) => e.target.value && setBack(e.target.value)} />
           </label>
           <div className="form-actions">
-            <button type="button" className="btn primary" onClick={resume} disabled={busy || !back}>Məşqə qayıtdı</button>
+            <button type="button" className="btn primary" onClick={activate} disabled={busy}>Aktiv et</button>
             <button type="button" className="btn" onClick={onClose}>Bağla</button>
           </div>
         </>
       ) : (
         <>
           <label className="muted" style={{ display: 'block' }}>
-            Bu aydan dondurulub
-            <input type="month" value={from} onChange={(e) => setFrom(e.target.value)} />
+            Dondurulma tarixi {lastPaid ? `(son ödəniş: ${fmtDate(lastPaid)})` : '(ödəniş yoxdur)'}
+            <input type="date" value={from} onChange={(e) => e.target.value && setFrom(e.target.value)} />
           </label>
           <div className="form-actions">
-            <button type="button" className="btn primary" onClick={freeze} disabled={busy || !from}>Dondur</button>
+            <button type="button" className="btn primary" onClick={freeze} disabled={busy}>Dondur</button>
             <button type="button" className="btn" onClick={onClose}>Bağla</button>
           </div>
         </>

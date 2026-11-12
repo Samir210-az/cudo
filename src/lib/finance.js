@@ -15,6 +15,14 @@ export const sum = (rows, field = 'amount') =>
 
 export const isFrozen = (child, period) =>
   (child.freezes || []).some((f) => f.from <= period && (!f.to || period <= f.to));
+export const isFrozenOn = (child, iso) =>
+  (child.freezes || []).some((f) => {
+    if (f.from > iso) return false;
+    if (f.back) return iso < f.back;
+    if (f.to) return `${iso.slice(0, 7)}-01` <= f.to;
+    return true;
+  });
+export const openFreeze = (child) => (child.freezes || []).find((f) => !f.to) || null;
 
 export function computeDebts(children, payments, period) {
   const paid = new Map();
@@ -40,7 +48,6 @@ export const OVERDUE_DAYS = 30;
 const dayNumber = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
 
 export function overdueChildren(children, payments, today, days = OVERDUE_DAYS) {
-  const thisMonth = `${today.slice(0, 7)}-01`;
   const last = new Map();
   for (const p of payments) {
     if (!p.paid_on) continue;
@@ -48,7 +55,7 @@ export function overdueChildren(children, payments, today, days = OVERDUE_DAYS) 
     if (!prev || p.paid_on > prev) last.set(p.child_id, p.paid_on);
   }
   return children
-    .filter((c) => c.status === 'aktiv' && Number(c.monthly_fee) > 0 && !isFrozen(c, thisMonth))
+    .filter((c) => c.status === 'aktiv' && Number(c.monthly_fee) > 0 && !openFreeze(c))
     .map((child) => {
       const lastPaid = last.get(child.id) || null;
       const since = lastPaid || child.joined_at;

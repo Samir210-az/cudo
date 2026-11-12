@@ -4,7 +4,7 @@ import { Empty, ErrorBox, Icon, Loader, Modal, PageHead, useToast } from '../com
 import BeltIcon from '../components/BeltIcon';
 import FreezeModal from '../components/FreezeModal';
 import PaymentModal from '../components/PaymentModal';
-import { isFrozen, sum } from '../lib/finance';
+import { openFreeze, sum } from '../lib/finance';
 import {
   addMonths, calcAge, currentPeriod, fmtDate, fmtMoney, fmtPeriod, formatPhone, fullName, gradeLabel, todayISO, trainingDuration,
 } from '../lib/format';
@@ -127,13 +127,13 @@ export default function ChildCard() {
     <>
       <PageHead
         title={<span className="title-belt"><BeltIcon name={child.belt} size={26} />{fullName(child)}</span>}
-        subtitle={`${calcAge(child.birth_date)} yaş · ${child.status === 'aktiv' ? 'Aktiv' : 'Passiv'}${isFrozen(child, currentPeriod()) ? ' · Dondurulub' : ''}`}
+        subtitle={`${calcAge(child.birth_date)} yaş · ${child.status === 'aktiv' ? 'Aktiv' : 'Passiv'}${openFreeze(child) ? ' · Dondurulub' : ''}`}
         back={<Link className="back-link" to="/panel/usaqlar">← Uşaqlar</Link>}
       >
         <button type="button" className="btn" onClick={() => setBeltOpen(true)}>Kəmər ver</button>
         <button type="button" className="btn" onClick={() => setPaying(true)}>Ödəniş qəbul et</button>
         <button type="button" className="btn" onClick={() => setFreezeOpen(true)}>
-          {isFrozen(child, currentPeriod()) ? 'Dondurma' : 'Dondur'}
+          {openFreeze(child) ? 'Aktiv et' : 'Dondur'}
         </button>
         <button type="button" className="btn" onClick={exportPdf} disabled={exporting}>
           <Icon name="download" /> PDF
@@ -142,6 +142,10 @@ export default function ChildCard() {
           <Icon name="edit" /> Redaktə
         </Link>
       </PageHead>
+
+      {openFreeze(child) && (
+        <div className="frozen-bar" role="status">Dondurulub · {fmtDate(openFreeze(child).from)} tarixindən</div>
+      )}
 
       <section className="profile" style={{ '--belt': belt?.stripe }}>
         <span className={`avatar lg ${avatarTone(child)}`} aria-hidden="true">{initials(child)}</span>
@@ -186,7 +190,7 @@ export default function ChildCard() {
             <Info label="Aylıq ödəniş">{fmtMoney(child.monthly_fee)}</Info>
             {(child.freezes || []).length > 0 && (
               <Info label="Dondurulma">
-                {child.freezes.map((f) => `${fmtPeriod(f.from)} — ${f.to ? fmtPeriod(f.to) : 'davam edir'}`).join('; ')}
+                {child.freezes.map((f) => `${fmtDate(f.from)} — ${f.back ? fmtDate(f.back) : f.to ? fmtPeriod(f.to) : 'davam edir'}`).join('; ')}
               </Info>
             )}
           </dl>
@@ -289,7 +293,7 @@ export default function ChildCard() {
         </Modal>
       )}
 
-      {freezeOpen && <FreezeModal child={child} onClose={() => setFreezeOpen(false)} onSaved={reload} />}
+      {freezeOpen && <FreezeModal child={child} lastPaid={payments.reduce((m, p) => (p.paid_on > m ? p.paid_on : m), '') || null} onClose={() => setFreezeOpen(false)} onSaved={reload} />}
 
       {paying && (
         <PaymentModal
