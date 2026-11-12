@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, useToast } from './ui';
 import { add, list, update } from '../lib/db';
-import { fullName, todayISO } from '../lib/format';
+import { fullName, groupsOf, todayISO } from '../lib/format';
 import { useClub } from '../lib/clubs';
 
 const LINE = /^(.+?)[\s,;:-]+['’]?(\d{1,2})(?:\s+(\d{1,2})[./](\d{1,2}))?$/;
@@ -59,6 +59,7 @@ export default function BulkChildren({ existing, onClose, onDone }) {
     const kid = byKey.get(key(r));
     return !kid || !payments.some((p) => p.child_id === kid.id && p.paid_on === r.paid_on);
   });
+  const existingGroups = useMemo(() => groupsOf(existing), [existing]);
   const groupName = group.trim();
   const regroup = groupName ? valid.filter((r) => byKey.has(key(r)) && byKey.get(key(r)).training_time !== groupName) : [];
   const amount = Number(fee);
@@ -135,9 +136,18 @@ export default function BulkChildren({ existing, onClose, onDone }) {
         <input type="number" inputMode="decimal" min="0" value={fee} onChange={(e) => setFee(e.target.value)} />
       </label>
       <label className="muted" style={{ display: 'block', marginTop: 8 }}>
-        Qrup (məşq saatı), istəyə bağlı
+        Hansı qrupa əlavə olunsun (məşq saatı)
         <input value={group} onChange={(e) => setGroup(e.target.value)} placeholder="məs. 16:30" autoComplete="off" />
       </label>
+      {existingGroups.length > 0 && (
+        <div className="tabs" role="group" aria-label="Mövcud qruplar" style={{ marginTop: 8 }}>
+          {existingGroups.map((g) => (
+            <button key={g} type="button" className="tab" aria-pressed={group.trim() === g} aria-selected={group.trim() === g} onClick={() => setGroup(g)}>
+              {g}
+            </button>
+          ))}
+        </div>
+      )}
       {rows.length > 0 && (
         <p className="muted">
           {newKids.length} yeni uşaq, {payable.length} ödəniş yazılacaq

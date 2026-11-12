@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Empty, ErrorBox, Icon, Loader, MonthPicker, PageHead, Stat, useToast } from '../components/ui';
 import { byName, eq, getAttendance, list, range, saveAttendance } from '../lib/db';
 import { addMonths, currentPeriod, fmtPeriod, fullName, groupsOf, pad, todayISO } from '../lib/format';
+import GroupPicker from '../components/GroupPicker';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
 
@@ -11,19 +12,6 @@ const shiftDay = (iso, n) => {
   return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
 };
 
-
-function GroupPicker({ groups, value, onChange }) {
-  if (!groups.length) return null;
-  return (
-    <div className="tabs" role="tablist" aria-label="Qrup" style={{ marginBottom: 12 }}>
-      {['', ...groups].map((g) => (
-        <button key={g || 'all'} type="button" role="tab" className="tab" aria-selected={value === g} onClick={() => onChange(g)}>
-          {g || 'Hamısı'}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function DayView() {
   const notify = useToast();

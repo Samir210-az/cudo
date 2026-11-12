@@ -5,6 +5,7 @@ import { calcAge, fullName, groupsOf, gradeLabel, trainingDuration } from '../li
 import { useQuery } from '../lib/hooks';
 import BeltIcon from '../components/BeltIcon';
 import BulkChildren from '../components/BulkChildren';
+import GroupPicker from '../components/GroupPicker';
 import { beltRank } from '../lib/belts';
 import { beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
@@ -65,6 +66,7 @@ export default function Children() {
       </PageHead>
 
       <div className="card">
+        <GroupPicker groups={groups} value={group} onChange={setGroup} allLabel="Bütün qruplar" />
         <div className="form-grid" style={{ marginBottom: 8 }}>
           <div className="search">
             <Icon name="search" size={18} />
@@ -75,12 +77,6 @@ export default function Children() {
             <option value="passiv">Passiv uşaqlar</option>
             <option value="hamısı">Hamısı</option>
           </select>
-          {groups.length > 0 && (
-            <select value={group} onChange={(e) => setGroup(e.target.value)} aria-label="Qrup">
-              <option value="">Bütün qruplar</option>
-              {groups.map((g) => <option key={g} value={g}>Qrup {g}</option>)}
-            </select>
-          )}
         </div>
         <label className="check" style={{ marginBottom: 6 }}>
           <input type="checkbox" checked={withId} onChange={(e) => setWithId(e.target.checked)} />
