@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { ClubProvider, useClub } from '../lib/clubs';
 import DebtReminder from './DebtReminder';
@@ -26,12 +26,18 @@ const navClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
 
 function ClubSwitch() {
   const { clubs, current, switchClub } = useClub();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   if (clubs.length < 2) return <span className="club-name">{current.club_name}</span>;
   return (
     <select
       className="club-select"
       value={current.id}
-      onChange={(e) => switchClub(e.target.value)}
+      onChange={(e) => {
+        switchClub(e.target.value);
+        const list = pathname.match(/^\/panel\/(usaqlar|yarislar)\/./);
+        if (list) navigate(`/panel/${list[1]}`, { replace: true });
+      }}
       aria-label="Aktiv filial"
     >
       {clubs.map((c) => <option key={c.id} value={c.id}>{c.club_name}</option>)}
