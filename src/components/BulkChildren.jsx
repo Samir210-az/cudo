@@ -6,7 +6,13 @@ import { useClub } from '../lib/clubs';
 
 const LINE = /^(.+?)[\s,;:-]+['’]?(\d{1,2})(?:\s+(\d{1,2})[./](\d{1,2}))?$/;
 const pad = (n) => String(n).padStart(2, '0');
-const key = (c) => fullName(c).toLocaleLowerCase('az');
+const FOLD = { ə: 'e', ü: 'u', ö: 'o', ı: 'i', ç: 'c', ş: 's', ğ: 'g' };
+const key = (c) =>
+  fullName(c)
+    .toLocaleLowerCase('az')
+    .replace(/[əüöıçşğ]/g, (ch) => FOLD[ch])
+    .replace(/\s+/g, ' ')
+    .trim();
 
 export function parseChildren(text, year = new Date().getFullYear()) {
   return text
