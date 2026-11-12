@@ -4,7 +4,6 @@ import { add, list, update } from '../lib/db';
 import { fullName, groupsOf, todayISO } from '../lib/format';
 import { useClub } from '../lib/clubs';
 
-const LINE = /^(.+?)[\s,;:-]+['’]?(\d{1,2})(?:\s+(\d{1,2})[./](\d{1,2}))?$/;
 const pad = (n) => String(n).padStart(2, '0');
 const FOLD = { ə: 'e', ü: 'u', ö: 'o', ı: 'i', ç: 'c', ş: 's', ğ: 'g' };
 const key = (c) =>
@@ -14,25 +13,32 @@ const key = (c) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+const DATE = /^(\d{1,2})[./](\d{1,2})$/;
+const AGE = /^['’]?(\d{1,2})$/;
+
 export function parseChildren(text, year = new Date().getFullYear()) {
   return text
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const m = line.match(LINE);
-      if (!m) return { line, error: true };
-      const parts = m[1].trim().split(/\s+/);
-      const age = Number(m[2]);
-      if (parts.length < 2 || age < 2 || age > 30) return { line, error: true };
-      const row = { line, last_name: parts[0], first_name: parts.slice(1).join(' '), age };
-      if (m[3]) {
-        const day = Number(m[3]);
-        const month = Number(m[4]);
+      const tokens = line.replace(/[,;]/g, ' ').split(/\s+/).filter(Boolean);
+      const dates = [];
+      while (tokens.length && DATE.test(tokens[tokens.length - 1])) {
+        const [, d, m] = tokens.pop().match(DATE);
+        const day = Number(d);
+        const month = Number(m);
         if (day < 1 || day > 31 || month < 1 || month > 12) return { line, error: true };
-        row.paid_on = `${year}-${pad(month)}-${pad(day)}`;
+        dates.unshift(`${year}-${pad(month)}-${pad(day)}`);
       }
-      return row;
+      let age = null;
+      if (tokens.length && AGE.test(tokens[tokens.length - 1])) {
+        age = Number(tokens.pop().match(AGE)[1]);
+        if (age < 2 || age > 30) return { line, error: true };
+      }
+      const parts = tokens.filter((t) => t !== '+' && t !== '-');
+      if (parts.length < 2 || parts.some((t) => /\d/.test(t))) return { line, error: true };
+      return { line, last_name: parts[0], first_name: parts.slice(1).join(' '), age, paid: [...new Set(dates)] };
     });
 }
 
@@ -54,10 +60,11 @@ export default function BulkChildren({ existing, onClose, onDone }) {
   const valid = rows.filter((r) => !r.error);
   const bad = rows.filter((r) => r.error);
   const newKids = valid.filter((r) => !byKey.has(key(r)));
-  const payable = valid.filter((r) => {
-    if (!r.paid_on) return false;
+  const payable = valid.flatMap((r) => {
     const kid = byKey.get(key(r));
-    return !kid || !payments.some((p) => p.child_id === kid.id && p.paid_on === r.paid_on);
+    return r.paid
+      .filter((date) => !kid || !payments.some((p) => p.child_id === kid.id && p.paid_on === date))
+      .map((date) => ({ row: r, date }));
   });
   const existingGroups = useMemo(() => groupsOf(existing), [existing]);
   const groupName = group.trim();
@@ -71,37 +78,37 @@ export default function BulkChildren({ existing, onClose, onDone }) {
       const year = new Date().getFullYear();
       let kids = 0;
       let paid = 0;
-      const firstMonth = valid.filter((r) => r.paid_on).map((r) => `${r.paid_on.slice(0, 7)}-01`).sort()[0];
+      const firstMonth = valid.flatMap((r) => r.paid).map((d) => `${d.slice(0, 7)}-01`).sort()[0];
       for (const r of valid) {
-        const start = r.paid_on ? `${r.paid_on.slice(0, 7)}-01` : firstMonth || todayISO();
+        const start = r.paid.length ? `${[...r.paid].sort()[0].slice(0, 7)}-01` : firstMonth || todayISO();
         let kid = byKey.get(key(r));
         let id = kid?.id;
         if (!kid) {
           id = await add('children', {
             first_name: r.first_name,
             last_name: r.last_name,
-            birth_date: `${year - r.age}-01-01`,
+            birth_date: r.age ? `${year - r.age}-01-01` : null,
             joined_at: start,
             status: 'aktiv',
             monthly_fee: amount > 0 ? amount : 0,
             has_scan: false,
             training_time: groupName || null,
-            note: 'Doğum tarixi təxminidir, yaşa görə yazılıb.',
+            note: r.age ? 'Doğum tarixi təxminidir, yaşa görə yazılıb.' : null,
           });
           kids += 1;
         } else {
           const patch = {};
           if (groupName && kid.training_time !== groupName) patch.training_time = groupName;
-          if (r.paid_on && !(Number(kid.monthly_fee) > 0) && amount > 0) patch.monthly_fee = amount;
-          if (r.paid_on && kid.joined_at > start) patch.joined_at = start;
+          if (r.paid.length && !(Number(kid.monthly_fee) > 0) && amount > 0) patch.monthly_fee = amount;
+          if (r.paid.length && kid.joined_at > start) patch.joined_at = start;
           if (Object.keys(patch).length) await update('children', id, patch);
         }
-        if (payable.includes(r)) {
+        for (const { date } of payable.filter((x) => x.row === r)) {
           await add('payments', {
             child_id: id,
             amount,
-            period_month: `${r.paid_on.slice(0, 7)}-01`,
-            paid_on: r.paid_on,
+            period_month: `${date.slice(0, 7)}-01`,
+            paid_on: date,
             method: 'nağd',
             note: null,
           });
@@ -121,8 +128,8 @@ export default function BulkChildren({ existing, onClose, onDone }) {
   return (
     <Modal title="Siyahıdan əlavə et" onClose={onClose}>
       <p className="muted">
-        Qeydlər <strong>{current?.club_name}</strong> filialına əlavə olunacaq. Hər sətirdə bir uşaq: soyad, ad, yaş və ödəniş
-        edibsə tarix (gün.ay).
+        Qeydlər <strong>{current?.club_name}</strong> filialına əlavə olunacaq. Hər sətirdə bir uşaq: soyad, ad, istəsən yaş, sonra ödəniş
+        tarixləri (gün.ay), bir neçə ay ola bilər.
       </p>
       <textarea
         rows={9}

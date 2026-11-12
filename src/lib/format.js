@@ -55,6 +55,7 @@ export const fmtNum = (n) => {
 export const fmtMoney = (n) => `${fmtNum(n)} ₼`;
 
 export function calcAge(birth, now = new Date()) {
+  if (!birth) return '—';
   const [y, m, d] = birth.split('-').map(Number);
   let age = now.getFullYear() - y;
   const month = now.getMonth() + 1;
