@@ -9,7 +9,7 @@ import { ROOT_CLUB, saveSettings as persistSettings } from '../lib/db';
 import { auth, emailToPhone } from '../lib/firebase';
 import { fetchSettings } from '../lib/settings';
 
-const FIELDS = ['club_name', 'tagline', 'phone', 'whatsapp', 'address', 'schedule', 'about'];
+const FIELDS = ['club_name', 'tagline', 'phone', 'phone2', 'whatsapp', 'address', 'schedule', 'about'];
 
 export default function Settings() {
   const notify = useToast();
@@ -31,13 +31,16 @@ export default function Settings() {
   const saveSettings = async (e) => {
     e.preventDefault();
     if (!form.club_name.trim()) return notify('Adı yazın.', 'error');
-    if (form.phone && !isValidPhone(form.phone)) return notify('Telefonu düzgün yazın.', 'error');
+    if (form.phone && !isValidPhone(form.phone)) return notify('Birinci telefonu düzgün yazın.', 'error');
+    if (form.phone2 && !isValidPhone(form.phone2)) return notify('İkinci telefonu düzgün yazın.', 'error');
+    if (form.phone2 && !form.phone) return notify('Əvvəlcə birinci telefonu yazın.', 'error');
     const clean = (v) => v.trim() || null;
     setBusy(true);
     try {
       await persistSettings({
         club_name: form.club_name.trim(),
         phone: form.phone ? normalizePhone(form.phone) : null,
+        phone2: form.phone2 ? normalizePhone(form.phone2) : null,
         address: clean(form.address),
         schedule: clean(form.schedule),
         ...(isRoot && {
@@ -91,7 +94,8 @@ export default function Settings() {
           <div className="form-grid">
             <Field label="Filialın adı" hint={isRoot ? 'Saytın əsas başlığı dəyişmir, ad yalnız məşq cədvəli və PDF-lərdə görünür' : undefined}><input value={form.club_name} onChange={set('club_name')} required /></Field>
             {isRoot && <Field label="Qısa təsvir"><input value={form.tagline} onChange={set('tagline')} /></Field>}
-            <Field label="Telefon"><input type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} /></Field>
+            <Field label="Telefon 1" hint="Saytda filialın əsas əlaqə nömrəsi kimi birinci görünür"><input type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} /></Field>
+            <Field label="Telefon 2"><input type="tel" inputMode="tel" value={form.phone2} onChange={set('phone2')} /></Field>
             <Field label="Ünvan" wide><input value={form.address} onChange={set('address')} /></Field>
             <Field label="Məşq cədvəli" hint="Günləri bir sətirdə, saatı ayrı sətirdə yazın. Saat yazılan sətir saytda rənglə seçilir" wide>
               <textarea value={form.schedule} onChange={set('schedule')} />

@@ -392,3 +392,4 @@ a.row:hover, label.row:hover { background: #f3f6fc; }
 .scan-thumb img { display: block; width: 100%; height: auto; }
 
 .frozen-bar { margin-bottom: 10px; padding: 10px 14px; border-radius: var(--radius); border-left: 6px solid var(--red); background: #fdecee; color: var(--red-dark); font-weight: 650; }
+.branch-phone { display: block; }

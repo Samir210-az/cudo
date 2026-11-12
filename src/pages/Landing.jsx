@@ -158,7 +158,7 @@ export default function Landing() {
       getPublicClub(ROOT_CLUB).catch(() => null),
       listClubs().catch(() => []),
     ]);
-    return { settings, branches: clubs.filter((c) => c.id !== ROOT_CLUB && (c.address || c.phone || c.schedule)) };
+    return { settings, branches: clubs.filter((c) => c.id !== ROOT_CLUB && (c.address || c.phone || c.phone2 || c.schedule)) };
   });
   const settings = data?.settings;
   const branches = data?.branches || [];
@@ -169,8 +169,8 @@ export default function Landing() {
   const scheduleLines = savedSchedule.length ? savedSchedule : DEFAULT_SCHEDULE;
   const about = settings?.about || DEFAULT_ABOUT;
   const contactBranches = [
-    ...(settings?.address || settings?.phone ? [{ id: ROOT_CLUB, club_name: mainName, address: settings.address, phone: settings.phone }] : []),
-    ...branches.filter((b) => b.address || b.phone),
+    ...(settings?.address || settings?.phone || settings?.phone2 ? [{ id: ROOT_CLUB, club_name: mainName, address: settings.address, phone: settings.phone, phone2: settings.phone2 }] : []),
+    ...branches.filter((b) => b.address || b.phone || b.phone2),
   ];
   const scheduleGroups = [
     { id: ROOT_CLUB, name: mainName, lines: scheduleLines },
@@ -305,7 +305,7 @@ export default function Landing() {
             <div className="branches">
               <h3 className="sub">Filiallar</h3>
               {contactBranches.map((branch) => {
-                const branchPhone = branch.phone ? normalizePhone(branch.phone) : '';
+                const branchPhones = [branch.phone, branch.phone2].filter(Boolean).map(normalizePhone);
                 return (
                   <article className="branch" key={branch.id}>
                     <h4>{branch.club_name}</h4>
@@ -314,11 +314,11 @@ export default function Landing() {
                         <Icon name="pin" /> {branch.address}
                       </p>
                     )}
-                    {branchPhone && (
-                      <a className="branch-phone" href={`tel:+994${branchPhone.slice(1)}`}>
-                        {formatPhone(branchPhone)}
+                    {branchPhones.map((num) => (
+                      <a className="branch-phone" key={num} href={`tel:+994${num.slice(1)}`}>
+                        {formatPhone(num)}
                       </a>
-                    )}
+                    ))}
                   </article>
                 );
               })}
