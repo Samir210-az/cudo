@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Empty, ErrorBox, Icon, Loader, MonthPicker, PageHead, Stat, useToast } from '../components/ui';
 import { byName, eq, getAttendance, list, range, saveAttendance } from '../lib/db';
-import { addMonths, currentPeriod, fmtPeriod, fullName, pad, todayISO } from '../lib/format';
+import { addMonths, currentPeriod, fmtPeriod, fullName, groupsOf, pad, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
 
@@ -11,10 +11,25 @@ const shiftDay = (iso, n) => {
   return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
 };
 
+
+function GroupPicker({ groups, value, onChange }) {
+  if (!groups.length) return null;
+  return (
+    <div className="tabs" role="tablist" aria-label="Qrup" style={{ marginBottom: 12 }}>
+      {['', ...groups].map((g) => (
+        <button key={g || 'all'} type="button" role="tab" className="tab" aria-selected={value === g} onClick={() => onChange(g)}>
+          {g || 'Hamısı'}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function DayView() {
   const notify = useToast();
   const [date, setDate] = useState(todayISO());
   const [q, setQ] = useState('');
+  const [group, setGroup] = useState('');
   const [present, setPresent] = useState(new Set());
   const [exporting, setExporting] = useState(false);
 
@@ -27,11 +42,17 @@ function DayView() {
     if (data) setPresent(new Set(data.saved));
   }, [data]);
 
+  const groups = useMemo(() => groupsOf(data?.kids || []), [data]);
+  const groupKids = useMemo(
+    () => (data?.kids || []).filter((k) => !group || k.training_time === group),
+    [data, group],
+  );
+
   const shown = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase('az');
-    const kids = data?.kids || [];
+    const kids = groupKids;
     return needle ? kids.filter((k) => fullName(k).toLocaleLowerCase('az').includes(needle)) : kids;
-  }, [data, q]);
+  }, [groupKids, q]);
 
   if (loading && !data) return <Loader />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
@@ -62,13 +83,13 @@ function DayView() {
     persist(next);
   };
 
-  const came = data.kids.filter((k) => present.has(k.id)).length;
+  const came = groupKids.filter((k) => present.has(k.id)).length;
 
   const exportPdf = async () => {
     setExporting(true);
     try {
       const [{ attendanceDayPdf }, settings] = await Promise.all([import('../lib/pdf'), fetchSettings()]);
-      await attendanceDayPdf(date, data.kids, present, settings);
+      await attendanceDayPdf(date, groupKids, present, settings, group);
     } catch (err) {
       notify('PDF hazırlanmadı: ' + err.message, 'error');
     } finally {
@@ -102,9 +123,10 @@ function DayView() {
           </button>
         </div>
 
+        <GroupPicker groups={groups} value={group} onChange={setGroup} />
         <div className="grid stats" style={{ marginBottom: 12 }}>
           <Stat label="Məşqə gələn" value={came} tone="ok" />
-          <Stat label="Gəlməyən" value={data.kids.length - came} />
+          <Stat label="Gəlməyən" value={groupKids.length - came} />
         </div>
 
         <div className="search" style={{ marginBottom: 10 }}>
@@ -118,7 +140,7 @@ function DayView() {
           <button type="button" className="btn sm" onClick={() => markAll(false)} disabled={!shown.length}>
             Təmizlə
           </button>
-          <button type="button" className="btn sm" onClick={exportPdf} disabled={!data.kids.length || exporting}>
+          <button type="button" className="btn sm" onClick={exportPdf} disabled={!groupKids.length || exporting}>
             <Icon name="download" size={16} /> PDF
           </button>
         </div>
@@ -134,7 +156,7 @@ function DayView() {
             ))}
           </div>
         ) : (
-          <Empty>{data.kids.length ? 'Axtarışa uyğun uşaq tapılmadı.' : 'Aktiv uşaq yoxdur.'}</Empty>
+          <Empty>{groupKids.length ? 'Axtarışa uyğun uşaq tapılmadı.' : 'Aktiv uşaq yoxdur.'}</Empty>
         )}
       </div>
     </div>
@@ -144,6 +166,7 @@ function DayView() {
 function MonthView() {
   const notify = useToast();
   const [period, setPeriod] = useState(currentPeriod());
+  const [group, setGroup] = useState('');
   const [exporting, setExporting] = useState(false);
 
   const { data, loading, error, reload } = useQuery(async () => {
@@ -156,21 +179,25 @@ function MonthView() {
 
   const summary = useMemo(() => {
     if (!data) return null;
-    const trainingDays = data.days.filter((d) => d.present?.length).length;
+    const kids = data.kids.filter((k) => !group || k.training_time === group);
+    const ids = new Set(kids.map((k) => k.id));
+    const days = data.days.map((d) => ({ ...d, present: (d.present || []).filter((id) => ids.has(id)) }));
+    const trainingDays = days.filter((d) => d.present.length).length;
     const counts = new Map();
-    data.days.forEach((d) => (d.present || []).forEach((id) => counts.set(id, (counts.get(id) || 0) + 1)));
-    const rows = data.kids.map((child) => {
+    days.forEach((d) => d.present.forEach((id) => counts.set(id, (counts.get(id) || 0) + 1)));
+    const rows = kids.map((child) => {
       const count = counts.get(child.id) || 0;
       return { child, count, percent: trainingDays ? Math.round((count / trainingDays) * 100) : 0 };
     });
     return { trainingDays, rows };
-  }, [data]);
+  }, [data, group]);
+  const groups = useMemo(() => groupsOf(data?.kids || []), [data]);
 
   const exportPdf = async () => {
     setExporting(true);
     try {
       const [{ attendanceMonthPdf }, settings] = await Promise.all([import('../lib/pdf'), fetchSettings()]);
-      await attendanceMonthPdf(period, summary.rows, summary.trainingDays, settings);
+      await attendanceMonthPdf(period, summary.rows, summary.trainingDays, settings, group);
     } catch (err) {
       notify('PDF hazırlanmadı: ' + err.message, 'error');
     } finally {
@@ -192,6 +219,7 @@ function MonthView() {
         <Loader />
       ) : (
         <>
+          <GroupPicker groups={groups} value={group} onChange={setGroup} />
           <div className="grid stats">
             <Stat label="Məşq günü" value={summary.trainingDays} hint="ən azı bir uşağın gəldiyi günlər" />
           </div>

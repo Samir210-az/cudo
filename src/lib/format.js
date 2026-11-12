@@ -96,3 +96,6 @@ const WEEKDAYS = ['Bazar', 'Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşə
 
 export const fmtLongDate = (date = new Date()) =>
   `${WEEKDAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()].toLocaleLowerCase('az')} ${date.getFullYear()}`;
+
+export const groupsOf = (kids) =>
+  [...new Set(kids.map((k) => k.training_time).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'az', { numeric: true }));

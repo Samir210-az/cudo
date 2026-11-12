@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components/ui';
-import { calcAge, fullName, gradeLabel, trainingDuration } from '../lib/format';
+import { calcAge, fullName, groupsOf, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import BeltIcon from '../components/BeltIcon';
 import BulkChildren from '../components/BulkChildren';
@@ -14,6 +14,7 @@ export default function Children() {
   const notify = useToast();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('aktiv');
+  const [group, setGroup] = useState('');
   const [withId, setWithId] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [bulk, setBulk] = useState(false);
@@ -27,10 +28,12 @@ export default function Children() {
     const needle = q.trim().toLocaleLowerCase('az');
     return [...(data || [])].sort((a, b) => beltRank(b.belt) - beltRank(a.belt)).filter((c) => {
       if (status !== 'hamısı' && c.status !== status) return false;
+      if (group && c.training_time !== group) return false;
       if (!needle) return true;
       return `${fullName(c)} ${c.father_name || ''} ${c.school || ''}`.toLocaleLowerCase('az').includes(needle);
     });
-  }, [data, q, status]);
+  }, [data, q, status, group]);
+  const groups = useMemo(() => groupsOf(data || []), [data]);
 
   const exportPdf = async () => {
     setExporting(true);
@@ -72,6 +75,12 @@ export default function Children() {
             <option value="passiv">Passiv uşaqlar</option>
             <option value="hamısı">Hamısı</option>
           </select>
+          {groups.length > 0 && (
+            <select value={group} onChange={(e) => setGroup(e.target.value)} aria-label="Qrup">
+              <option value="">Bütün qruplar</option>
+              {groups.map((g) => <option key={g} value={g}>Qrup {g}</option>)}
+            </select>
+          )}
         </div>
         <label className="check" style={{ marginBottom: 6 }}>
           <input type="checkbox" checked={withId} onChange={(e) => setWithId(e.target.checked)} />
@@ -89,7 +98,7 @@ export default function Children() {
                   <div className="row-title"><BeltIcon name={c.belt} size={18} />{fullName(c)}</div>
                   <div className="row-sub">
                     {calcAge(c.birth_date)} yaş · {gradeLabel(c.grade)}
-                    {c.school ? `, ${c.school}` : ''} · {trainingDuration(c.joined_at)}
+                    {c.school ? `, ${c.school}` : ''} · {trainingDuration(c.joined_at)}{c.training_time ? ` · ${c.training_time}` : ''}
                   </div>
                 </div>
                 {c.status === 'passiv' ? (

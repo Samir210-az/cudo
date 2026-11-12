@@ -302,7 +302,7 @@ export async function financeReportPdf(report, settings) {
   await save(buildDoc('Maliyyə hesabatı', settings, content, { subtitle: title }), `hesabat-${slug(title)}.pdf`);
 }
 
-export async function attendanceDayPdf(date, kids, present, settings) {
+export async function attendanceDayPdf(date, kids, present, settings, group = '') {
   const came = kids.filter((k) => present.has(k.id)).length;
   const body = kids.map((k, i) => [
     String(i + 1),
@@ -313,12 +313,12 @@ export async function attendanceDayPdf(date, kids, present, settings) {
     kids.length ? table([20, '*', 70], ['№', 'Soyad, ad', 'Davamiyyət'], body) : { text: 'Aktiv uşaq yoxdur.', color: '#6b7788' },
   ];
   await save(
-    buildDoc('Məşq davamiyyəti', settings, content, { subtitle: `${fmtDate(date)} · Gələn: ${came} / ${kids.length}` }),
+    buildDoc('Məşq davamiyyəti', settings, content, { subtitle: `${fmtDate(date)}${group ? ` · Qrup ${group}` : ''} · Gələn: ${came} / ${kids.length}` }),
     `davamiyyet-${date}.pdf`,
   );
 }
 
-export async function attendanceMonthPdf(period, rows, trainingDays, settings) {
+export async function attendanceMonthPdf(period, rows, trainingDays, settings, group = '') {
   const body = rows.map((r, i) => [
     String(i + 1),
     fullName(r.child),
@@ -327,7 +327,7 @@ export async function attendanceMonthPdf(period, rows, trainingDays, settings) {
   ]);
   await save(
     buildDoc('Aylıq davamiyyət', settings, [table([20, '*', 70, 50], ['№', 'Soyad, ad', 'Gəlib', 'Faiz'], body)], {
-      subtitle: `${fmtPeriod(period)} · Məşq günü: ${trainingDays}`,
+      subtitle: `${fmtPeriod(period)}${group ? ` · Qrup ${group}` : ''} · Məşq günü: ${trainingDays}`,
     }),
     `davamiyyet-${period.slice(0, 7)}.pdf`,
   );

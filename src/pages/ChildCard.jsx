@@ -190,6 +190,7 @@ export default function ChildCard() {
               {child.parent_phone ? <a href={`tel:+994${child.parent_phone.slice(1)}`}>{formatPhone(child.parent_phone)}</a> : null}
             </Info>
             <Info label="Ünvan">{child.address}</Info>
+            <Info label="Qrup">{child.training_time}</Info>
             <Info label="Qeyd">{child.note}</Info>
           </dl>
         </section>

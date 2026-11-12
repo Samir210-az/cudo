@@ -41,6 +41,7 @@ export default function BulkChildren({ existing, onClose, onDone }) {
   const notify = useToast();
   const [text, setText] = useState('');
   const [fee, setFee] = useState('50');
+  const [group, setGroup] = useState('');
   const [busy, setBusy] = useState(false);
   const [payments, setPayments] = useState([]);
 
@@ -58,6 +59,8 @@ export default function BulkChildren({ existing, onClose, onDone }) {
     const kid = byKey.get(key(r));
     return !kid || !payments.some((p) => p.child_id === kid.id && p.paid_on === r.paid_on);
   });
+  const groupName = group.trim();
+  const regroup = groupName ? valid.filter((r) => byKey.has(key(r)) && byKey.get(key(r)).training_time !== groupName) : [];
   const amount = Number(fee);
   const needFee = payable.length > 0 && !(amount > 0);
 
@@ -81,13 +84,15 @@ export default function BulkChildren({ existing, onClose, onDone }) {
             status: 'aktiv',
             monthly_fee: amount > 0 ? amount : 0,
             has_scan: false,
+            training_time: groupName || null,
             note: 'Doğum tarixi təxminidir, yaşa görə yazılıb.',
           });
           kids += 1;
-        } else if (r.paid_on) {
+        } else {
           const patch = {};
-          if (!(Number(kid.monthly_fee) > 0) && amount > 0) patch.monthly_fee = amount;
-          if (kid.joined_at > start) patch.joined_at = start;
+          if (groupName && kid.training_time !== groupName) patch.training_time = groupName;
+          if (r.paid_on && !(Number(kid.monthly_fee) > 0) && amount > 0) patch.monthly_fee = amount;
+          if (r.paid_on && kid.joined_at > start) patch.joined_at = start;
           if (Object.keys(patch).length) await update('children', id, patch);
         }
         if (payable.includes(r)) {
@@ -110,7 +115,7 @@ export default function BulkChildren({ existing, onClose, onDone }) {
     }
   };
 
-  const nothing = !newKids.length && !payable.length;
+  const nothing = !newKids.length && !payable.length && !regroup.length;
 
   return (
     <Modal title="Siyahıdan əlavə et" onClose={onClose}>
@@ -129,10 +134,15 @@ export default function BulkChildren({ existing, onClose, onDone }) {
         Ödənişin məbləği (AZN)
         <input type="number" inputMode="decimal" min="0" value={fee} onChange={(e) => setFee(e.target.value)} />
       </label>
+      <label className="muted" style={{ display: 'block', marginTop: 8 }}>
+        Qrup (məşq saatı), istəyə bağlı
+        <input value={group} onChange={(e) => setGroup(e.target.value)} placeholder="məs. 16:30" autoComplete="off" />
+      </label>
       {rows.length > 0 && (
         <p className="muted">
           {newKids.length} yeni uşaq, {payable.length} ödəniş yazılacaq
           {valid.length - newKids.length > 0 && `, ${valid.length - newKids.length} uşaq artıq siyahıdadır`}
+          {regroup.length > 0 && `, ${regroup.length} uşağın qrupu dəyişəcək`}
           {bad.length > 0 && `, ${bad.length} sətir oxunmadı: ${bad.map((b) => b.line).join('; ')}`}
           {needFee && '. Ödəniş üçün məbləği yazın'}
         </p>

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ErrorBox, Field, Icon, Loader, PageHead, useToast } from '../components/ui';
-import { calcAge, isValidPhone, normalizePhone, todayISO } from '../lib/format';
+import { calcAge, groupsOf, isValidPhone, normalizePhone, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
-import { add, get, removeScan, saveScan, update } from '../lib/db';
+import { add, get, list, removeScan, saveScan, update } from '../lib/db';
 import { BELTS } from '../lib/belts';
 import { fileToScan } from '../lib/image';
 
@@ -11,7 +11,7 @@ import { fileToScan } from '../lib/image';
 const EMPTY = {
   first_name: '', last_name: '', father_name: '', birth_date: '', gender: '',
   id_series: '', id_fin: '', school: '', grade: '', joined_at: todayISO(),
-  belt: '', weight_kg: '', parent_name: '', parent_phone: '', address: '', monthly_fee: '',
+  belt: '', weight_kg: '', parent_name: '', parent_phone: '', address: '', training_time: '', monthly_fee: '',
   status: 'aktiv', note: '',
 };
 
@@ -31,6 +31,11 @@ export default function ChildForm() {
     if (!editing) return null;
     return get('children', id);
   }, [id]);
+
+  const [groups, setGroups] = useState([]);
+  useEffect(() => {
+    list('children').then((all) => setGroups(groupsOf(all))).catch(() => setGroups([]));
+  }, []);
 
   useEffect(() => {
     if (!existing) return;
@@ -87,6 +92,7 @@ export default function ChildForm() {
       parent_name: text(form.parent_name),
       parent_phone: form.parent_phone ? normalizePhone(form.parent_phone) : null,
       address: text(form.address),
+      training_time: text(form.training_time),
       monthly_fee: Number(form.monthly_fee || 0),
       status: form.status,
       note: text(form.note),
@@ -191,6 +197,12 @@ export default function ChildForm() {
           <p className="form-section">Klubda</p>
           <Field label="Klubda qeydiyyat tarixi">
             <input type="date" value={form.joined_at} max={todayISO()} onChange={set('joined_at')} />
+          </Field>
+          <Field label="Qrup (məşq saatı)">
+            <input value={form.training_time} onChange={set('training_time')} list="group-options" placeholder="məs. 16:30" autoComplete="off" />
+            <datalist id="group-options">
+              {groups.map((g) => <option key={g} value={g} />)}
+            </datalist>
           </Field>
           <Field label="Kəmər">
             <select value={form.belt} onChange={set('belt')}>
