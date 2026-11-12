@@ -4,6 +4,7 @@ import { Empty, ErrorBox, Icon, Loader, PageHead, useToast } from '../components
 import { calcAge, fullName, gradeLabel, trainingDuration } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import BeltIcon from '../components/BeltIcon';
+import BulkChildren from '../components/BulkChildren';
 import { beltRank } from '../lib/belts';
 import { beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
@@ -15,6 +16,7 @@ export default function Children() {
   const [status, setStatus] = useState('aktiv');
   const [withId, setWithId] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [bulk, setBulk] = useState(false);
 
   const { data, loading, error, reload } = useQuery(
     async () => (await list('children')).sort(byName),
@@ -50,6 +52,9 @@ export default function Children() {
       <PageHead title="Uşaqlar" subtitle={`${filtered.length} nəfər`}>
         <button type="button" className="btn" onClick={exportPdf} disabled={!filtered.length || exporting}>
           <Icon name="download" /> {exporting ? 'Hazırlanır…' : 'PDF'}
+        </button>
+        <button type="button" className="btn" onClick={() => setBulk(true)}>
+          <Icon name="plus" /> Siyahıdan
         </button>
         <Link to="/panel/usaqlar/yeni" className="btn primary">
           <Icon name="plus" /> Yeni uşaq
@@ -102,6 +107,7 @@ export default function Children() {
           </Empty>
         )}
       </div>
+      {bulk && <BulkChildren existing={data || []} onClose={() => setBulk(false)} onDone={() => { setBulk(false); reload(); }} />}
     </>
   );
 }
