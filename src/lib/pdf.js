@@ -228,7 +228,7 @@ export async function competitionPdf(competition, entries, settings) {
   await save(buildDoc(competition.name, settings, content, { subtitle }), `yaris-${slug(competition.name)}.pdf`);
 }
 
-export async function debtorsPdf(rows, period, settings) {
+export async function debtorsPdf(rows, period, settings, group = '') {
   const total = rows.reduce((s, r) => s + r.due, 0);
   const body = rows.map((r, i) => [
     String(i + 1),
@@ -244,7 +244,7 @@ export async function debtorsPdf(rows, period, settings) {
       : { text: 'Bu ay üzrə borc yoxdur.', color: '#6b7788' },
     { text: `Ümumi borc: ${money(total)}`, bold: true, alignment: 'right', margin: [0, 10, 0, 0] },
   ];
-  await save(buildDoc('Borclu uşaqlar', settings, content, { subtitle: fmtPeriod(period) }), `borclar-${period.slice(0, 7)}.pdf`);
+  await save(buildDoc('Borclu uşaqlar', settings, content, { subtitle: `${fmtPeriod(period)}${group ? ` · Qrup ${group}` : ''}` }), `borclar-${period.slice(0, 7)}.pdf`);
 }
 
 export async function financeReportPdf(report, settings) {

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import BeltIcon from '../components/BeltIcon';
+import GroupPicker from '../components/GroupPicker';
 import PaymentModal from '../components/PaymentModal';
 import { Empty, ErrorBox, Field, Icon, Loader, Modal, MonthPicker, PageHead, Stat, useToast } from '../components/ui';
 import { computeDebts, EXPENSE_CATEGORIES, onlyDebtors, OVERDUE_DAYS, overdueChildren, sum } from '../lib/finance';
-import { addMonths, currentPeriod, fmtDate, fmtMoney, fullName, todayISO } from '../lib/format';
+import { addMonths, currentPeriod, fmtDate, fmtMoney, fullName, groupsOf, todayISO } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
 import { add, byName, eq, indexById, list, range, remove } from '../lib/db';
@@ -71,6 +72,7 @@ export default function Finance() {
   const [period, setPeriod] = useState(currentPeriod());
   const [paying, setPaying] = useState(null);
   const [addingExpense, setAddingExpense] = useState(false);
+  const [group, setGroup] = useState('');
 
   const { data, loading, error, reload } = useQuery(async () => {
     const next = addMonths(period, 1);
@@ -92,11 +94,15 @@ export default function Finance() {
 
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
-  const rows = data ? computeDebts(data.kids, data.payments, period) : [];
+  const groups = data ? groupsOf(data.kids) : [];
+  const inGroup = (child) => !group || child?.training_time === group;
+  const kids = data ? data.kids.filter(inGroup) : [];
+  const groupPayments = data ? data.payments.filter((p) => inGroup(p.children)) : [];
+  const rows = data ? computeDebts(kids, groupPayments, period) : [];
   const debtors = onlyDebtors(rows);
-  const overdue = data ? data.overdue : [];
+  const overdue = data ? data.overdue.filter((r) => inGroup(r.child)) : [];
   const expected = sum(rows, 'fee');
-  const collected = data ? sum(data.payments) : 0;
+  const collected = sum(groupPayments);
 
   const removePayment = async (p) => {
     if (!window.confirm('Bu ödəniş qeydi silinsin?')) return;
@@ -121,7 +127,7 @@ export default function Finance() {
   const debtorsPdf = async () => {
     try {
       const [{ debtorsPdf: build }, settings] = await Promise.all([import('../lib/pdf'), fetchSettings()]);
-      await build(debtors, period, settings);
+      await build(debtors, period, settings, group);
     } catch (err) {
       notify('PDF hazırlanmadı: ' + err.message, 'error');
     }
@@ -141,6 +147,12 @@ export default function Finance() {
         <button type="button" role="tab" className="tab" aria-selected={tab === 'debts'} onClick={() => setTab('debts')}>Borclular</button>
         <button type="button" role="tab" className="tab" aria-selected={tab === 'expenses'} onClick={() => setTab('expenses')}>Xərclər</button>
       </div>
+
+      {tab !== 'expenses' && (
+        <div style={{ marginTop: 12 }}>
+          <GroupPicker groups={groups} value={group} onChange={setGroup} />
+        </div>
+      )}
 
       {overdue.length > 0 && (
         <div className="warn-banner" role="alert">
@@ -229,9 +241,9 @@ export default function Finance() {
                 <Icon name="plus" size={16} /> Ödəniş
               </button>
             </div>
-            {data.payments.length ? (
+            {groupPayments.length ? (
               <div className="list">
-                {data.payments.map((p) => (
+                {groupPayments.map((p) => (
                   <div className="row" key={p.id}>
                     <div className="row-main">
                       <div className="row-title"><BeltIcon name={p.children.belt} size={18} />{fullName(p.children)}</div>
