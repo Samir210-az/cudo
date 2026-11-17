@@ -20,7 +20,7 @@ const SECTIONS = [
       'Tatami sayı: yarış neçə tatamidə keçiriləcəksə o qədər yazın.',
       'Başlama saatı: birinci görüşün vaxtı.',
       'Bir görüşün müddəti: aralar daxil orta müddət. Cədvəldəki saatlar bu rəqəmə görə hesablanır, ona görə real tempi düşünüb yazın.',
-      'Bürünc medal qaydası: üç seçim var. "Təsəllü görüşlər" finalçıya uduzanlara bürünc üçün ikinci şans verir, yerlər 3, 3, 5, 5, 7, 7 olur. "İki bürünc" yarımfinalda uduzan iki nəfəri birbaşa bürünc sayır. "Bir bürünc" yarımfinal uduzanları arasında ayrıca görüş keçirir. Dəyişiklik yalnız yeni püşkatmalara aid olur.',
+      'Bürünc medal qaydası: üç seçim var. "Təsəlliverici görüşlər" finalçıya uduzanlara bürünc üçün ikinci şans verir, yerlər 3, 3, 5, 5, 7, 7 olur. "İki bürünc" yarımfinalda uduzan iki nəfəri birbaşa bürünc sayır. "Bir bürünc" yarımfinal uduzanları arasında ayrıca görüş keçirir. Dəyişiklik yalnız yeni püşkatmalara aid olur.',
     ],
     note: 'Yarışın qaydası hansıdırsa, ona uyğun seçin. Əmin deyilsinizsə, əvvəlcədən hakim heyəti ilə razılaşdırın.',
   },
@@ -110,7 +110,7 @@ const SECTIONS = [
       },
       {
         title: 'Nəticə yazdan sonra',
-        text: 'Qalib növbəti mərhələdə öz yerini alır. Rəqibi bilinməyən yerlərdə "rəqib hələ bəlli deyil" yazılır. Finala çıxanlara uduzanlar təsəllü görüşlərə, bürünc görüşlərinə düşür. Bunlar tabloda özü yaranır. Dərc edilmiş cədvəl bir neçə saniyəyə yenilənir (turnir səhifəsi açıq qalmalıdır), məşqçi səhifəsi isə hər 45 saniyədə bir yoxlayır.',
+        text: 'Qalib növbəti mərhələdə öz yerini alır. Rəqibi bilinməyən yerlərdə "rəqib hələ bəlli deyil" yazılır. Finala çıxanlara uduzanlar təsəlliverici görüşlərə, bürünc görüşlərinə düşür. Bunlar tabloda özü yaranır. Dərc edilmiş cədvəl bir neçə saniyəyə yenilənir (turnir səhifəsi açıq qalmalıdır), məşqçi səhifəsi isə hər 45 saniyədə bir yoxlayır.',
       },
       {
         title: 'Səhv yazanda',
