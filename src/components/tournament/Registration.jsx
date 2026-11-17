@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Empty, Field, Icon, Modal, useToast } from '../ui';
 import AthleteForm, { toPayload, validateAthlete } from './AthleteForm';
+import BranchLinks from './BranchLinks';
 import { addMany, listClubs, listFor, remove } from '../../lib/db';
 import { useQuery } from '../../lib/hooks';
 import { calcAge, fmtDate, fullName, todayISO } from '../../lib/format';
@@ -251,6 +252,7 @@ export default function Registration({ competition, config, athletes, brackets, 
         <button type="button" className="btn primary" onClick={() => setMode({ type: 'one' })}><Icon name="plus" /> Tək idmançı</button>
         <button type="button" className="btn" onClick={() => setMode({ type: 'bulk' })}><Icon name="users" /> Kütləvi əlavə et</button>
         <button type="button" className="btn" onClick={() => setMode({ type: 'own' })}><Icon name="trophy" /> Filialların uşaqlarından</button>
+        <button type="button" className="btn" onClick={() => setMode({ type: 'links' })}><Icon name="globe" /> Filial linkləri</button>
       </div>
 
       <div className="filters">
@@ -301,6 +303,7 @@ export default function Registration({ competition, config, athletes, brackets, 
       {mode?.type === 'one' && (
         <AthleteForm competitionId={competition.id} athlete={mode.athlete} clubs={clubs} existing={athletes} onClose={() => setMode(null)} onSaved={reload} />
       )}
+      {mode?.type === 'links' && <BranchLinks competition={competition} athletes={athletes} onClose={() => setMode(null)} onSaved={reload} />}
       {mode?.type === 'bulk' && <BulkAdd competitionId={competition.id} clubs={clubs} onClose={() => setMode(null)} onSaved={reload} />}
       {mode?.type === 'own' && (
         <ImportOwn competitionId={competition.id} taken={new Set(athletes.map((a) => a.child_id).filter(Boolean))} onClose={() => setMode(null)} onSaved={reload} />
