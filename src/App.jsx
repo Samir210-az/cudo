@@ -4,6 +4,7 @@ import AdminLayout from './components/AdminLayout';
 import { Loader } from './components/ui';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import CoachRegistration from './pages/CoachRegistration';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Children = lazy(() => import('./pages/Children'));
@@ -27,6 +28,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/giris" element={<Login />} />
+        <Route path="/qeydiyyat/:token" element={<CoachRegistration />} />
         <Route path="/panel" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="usaqlar" element={<Children />} />
