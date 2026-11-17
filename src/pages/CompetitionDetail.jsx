@@ -202,7 +202,7 @@ export default function CompetitionDetail() {
       {registered.length > 0 && (
         <section className="card" style={{ marginBottom: 14 }}>
           <div className="group-title" style={{ marginTop: 0 }}>
-            <h2 style={{ margin: 0 }}>Turnir qeydiyyatı</h2>
+            <h2 style={{ margin: 0 }}>Turnirə yazılanlar</h2>
             <span className="badge">{registered.length}</span>
           </div>
           <div className="list">
@@ -216,7 +216,6 @@ export default function CompetitionDetail() {
               </div>
             ))}
           </div>
-          <Link className="btn" style={{ marginTop: 12 }} to={`/panel/yarislar/${id}/turnir#qeydiyyat`}>Qeydiyyata keç</Link>
         </section>
       )}
 
