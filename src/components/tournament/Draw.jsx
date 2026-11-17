@@ -6,7 +6,7 @@ import {
   bracketId, groupCategories, hasResults, makeDraw, progress,
 } from '../../lib/tournament';
 
-export default function Draw({ competition, config, athletes, brackets, reload }) {
+export default function Draw({ competition, config, athletes, brackets, reload, goTo }) {
   const notify = useToast();
   const [onlyWeighed, setOnlyWeighed] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -184,7 +184,17 @@ export default function Draw({ competition, config, athletes, brackets, reload }
           })}
         </div>
       ) : (
-        <div className="card"><Empty>Püşkatma üçün çəkilişdən keçmiş idmançı yoxdur.</Empty></div>
+        <div className="card">
+          <Empty>
+            {athletes.length
+              ? 'Püşkatma üçün kateqoriya yoxdur. İdmançılarda doğum tarixi, cins və ya çəki çatışmır, yaxud onlar hələ çəkilişdən keçməyib.'
+              : 'Hələ idmançı əlavə edilməyib.'}
+          </Empty>
+          <div className="toolbar" style={{ justifyContent: 'center' }}>
+            <button type="button" className="btn primary" onClick={() => goTo('qeydiyyat')}>Qeydiyyata keç</button>
+            <button type="button" className="btn" onClick={() => goTo('cekilis')}>Çəkilişə keç</button>
+          </div>
+        </div>
       )}
 
       {orphans.length > 0 && (
