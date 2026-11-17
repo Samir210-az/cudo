@@ -123,6 +123,18 @@ export default function Draw({ competition, config, athletes, brackets, reload, 
     }
   };
 
+  const exportSchedule = async () => {
+    setBusy(true);
+    try {
+      const { tournamentSchedulePdf } = await import('../../lib/pdf');
+      await tournamentSchedulePdf(competition, athletes, brackets.filter((b) => live.has(b.category_key)), config);
+    } catch (err) {
+      notify('PDF hazırlanmadı: ' + err.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const pending = categories.filter((c) => !byKey.has(c.key)).length;
 
   return (
@@ -136,6 +148,7 @@ export default function Draw({ competition, config, athletes, brackets, reload, 
         <button type="button" className="btn primary" onClick={drawAll} disabled={busy || !pending}>Hamısını püşkat ({pending})</button>
         {config.mats > 1 && <button type="button" className="btn" onClick={spreadMats} disabled={busy || !brackets.length}>Tatamilərə böl</button>}
         <button type="button" className="btn" onClick={() => exportPdf()} disabled={busy || !brackets.length}><Icon name="download" /> Tablo PDF</button>
+        <button type="button" className="btn" onClick={exportSchedule} disabled={busy || !brackets.length}><Icon name="download" /> Məşqçilər üçün PDF</button>
       </div>
       <label className="check-line">
         <input type="checkbox" checked={onlyWeighed} onChange={(e) => setOnlyWeighed(e.target.checked)} />

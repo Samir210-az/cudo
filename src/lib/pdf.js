@@ -1,8 +1,9 @@
 import {
   calcAge, formatPhone, fmtDate, fmtNum, fmtPeriod, fullName, gradeLabel, todayISO, slugify as slug, trainingDuration,
 } from './format';
+import { gamesOf } from './publish';
 import {
-  firstRoundSlots, isMain, placeLabel, matchNumbers, orderedMatches, placements, roundName, scoreDigits,
+  buildSchedule, firstRoundSlots, isMain, placeLabel, matchNumbers, orderedMatches, placements, roundName, scoreDigits,
 } from './tournament';
 
 let engine;
@@ -684,4 +685,54 @@ export function tournamentProtocolDoc(competition, brackets, medals, settings) {
 
 export async function tournamentResultsPdf(competition, brackets, medals, settings) {
   await save(tournamentProtocolDoc(competition, brackets, medals, settings), `protokol-${slug(competition.name)}.pdf`);
+}
+
+const normClub = (s) => (s || '').trim().toLocaleLowerCase('az');
+
+export function tournamentScheduleDoc(competition, athletes, brackets, config) {
+  const schedule = buildSchedule(brackets, config);
+  const inDraw = new Set(brackets.flatMap((b) => b.athletes.map((a) => a.id)));
+  const clubs = new Map();
+  for (const a of athletes) {
+    if (!inDraw.has(a.id)) continue;
+    const key = normClub(a.club_name);
+    if (!clubs.has(key)) clubs.set(key, { name: a.club_name || 'Klubsuz', people: [] });
+    clubs.get(key).people.push({ name: personName(a), ...gamesOf(a.id, brackets, schedule) });
+  }
+  const content = [];
+  const list = [...clubs.values()].sort((x, y) => x.name.localeCompare(y.name, 'az'));
+  list.forEach((club, i) => {
+    club.people.sort((x, y) => x.name.localeCompare(y.name, 'az'));
+    content.push({ text: competition.name, bold: true, fontSize: 15, color: TITLE_COLOR, ...(i ? { pageBreak: 'before' } : {}) });
+    content.push({ text: [competition.held_on ? fmtDate(competition.held_on) : null, competition.location].filter(Boolean).join(' · '), color: '#5b6879', margin: [0, 2, 0, 0] });
+    content.push({ text: `${club.name} · görüş cədvəli`, bold: true, fontSize: 13, color: SECTION_COLOR, margin: [0, 10, 0, 4] });
+    content.push({ text: 'Saatlar təxminidir, əvvəlki görüşlər uzansa və ya tez bitsə dəyişə bilər. Növbəti mərhələlərin rəqibi əvvəlki görüşlərin nəticəsindən asılıdır.', fontSize: 8.5, color: '#6b7788', margin: [0, 0, 0, 6] });
+    for (const p of club.people) {
+      const body = p.games.map((g) => [
+        String(g.number), g.mat ? `Tatami ${g.mat}` : '—', dash(g.time), g.round,
+        g.opponent_club ? `${g.opponent} (${g.opponent_club})` : g.opponent,
+      ]);
+      content.push({
+        unbreakable: true,
+        margin: [0, 8, 0, 0],
+        stack: [
+          { text: [{ text: p.name, bold: true, fontSize: 11 }, { text: `   ${p.category || ''}`, color: '#5b6879' }] },
+          p.games.length
+            ? table([34, 60, 40, 80, '*'], ['Görüş №', 'Tatami', 'Saat', 'Mərhələ', 'Rəqib'], body, { margin: [0, 3, 0, 0] })
+            : { text: p.bye ? 'Birinci mərhələni keçir (rəqibsiz). Növbəti görüşü əvvəlki görüşlərin nəticəsindən sonra bəlli olacaq.' : 'Görüşü yoxdur.', color: '#6b7788', margin: [0, 3, 0, 0] },
+        ],
+      });
+    }
+  });
+  if (!list.length) content.push({ text: 'Püşkatma keçirilməyib.', color: '#6b7788' });
+  return {
+    pageSize: 'A4',
+    pageMargins: [36, 36, 36, 36],
+    defaultStyle: { font: 'Roboto', fontSize: 9.5, color: '#111111' },
+    content,
+  };
+}
+
+export async function tournamentSchedulePdf(competition, athletes, brackets, config) {
+  await save(tournamentScheduleDoc(competition, athletes, brackets, config), `mesqci-cedveli-${slug(competition.name)}.pdf`);
 }

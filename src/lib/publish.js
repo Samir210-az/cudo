@@ -3,7 +3,7 @@ import { fetchSchedule, publishSchedule } from './links';
 
 const UNKNOWN = 'rəqib hələ bəlli deyil';
 
-function gamesOf(athleteId, brackets, schedule) {
+export function gamesOf(athleteId, brackets, schedule) {
   const games = [];
   let category = null;
   let bye = false;
