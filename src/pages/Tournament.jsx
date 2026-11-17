@@ -28,26 +28,25 @@ export default function Tournament() {
   const [tab, setTab] = useState(() => TABS.find(([k]) => k === window.location.hash.slice(1))?.[0] || 'qeydiyyat');
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [competition, athletes, brackets, kids] = await Promise.all([
+    const [competition, athletes, brackets] = await Promise.all([
       get('competitions', id),
       list('tournamentAthletes', eq('competition_id', id)),
       list('tournamentBrackets', eq('competition_id', id)),
-      list('children'),
     ]);
-    return { competition, athletes, brackets, kids };
+    return { competition, athletes, brackets };
   }, [id]);
 
   const config = useMemo(() => (data ? readConfig(data.competition) : null), [data]);
 
   if (loading && !data) return <Loader />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  const { competition, athletes, brackets, kids } = data;
+  const { competition, athletes, brackets } = data;
 
   const choose = (key) => {
     setTab(key);
     window.history.replaceState(null, '', `#${key}`);
   };
-  const shared = { competition, config, athletes, brackets, kids, reload };
+  const shared = { competition, config, athletes, brackets, reload };
 
   return (
     <>
