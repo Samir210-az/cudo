@@ -9,13 +9,26 @@ export function defaultAgeGroups(year) {
   return [8, 10, 12, 14, 16].map((n) => ({ code: `U${n}`, from: year - n + 1, to: year - n + 2 }));
 }
 
+export const HUNER_BOY_CLASSES = {
+  U16: '-34, -38, -42, -46, -50, -55, -60, -66, -73, +73',
+  U14: '-27, -30, -34, -38, -42, -46, -50, -55, -60, -66, +66',
+  U12: '-24, -27, -30, -34, -38, -42, -46, -50, -55, +55',
+  U10: '-19, -21, -24, -27, -30, -34, -38, -42, -46, +46',
+  U8: '-19, -21, -24, -27, -30, -34, +34',
+};
+
+export const defaultClasses = (groups) => Object.fromEntries(
+  groups.filter((g) => HUNER_BOY_CLASSES[g.code]).map((g) => [`${g.code}|oğlan`, HUNER_BOY_CLASSES[g.code]]),
+);
+
 export function readConfig(competition) {
   const year = Number((competition.held_on || '').slice(0, 4)) || new Date().getFullYear();
   const saved = competition.tournament || {};
+  const age_groups = saved.age_groups?.length ? saved.age_groups : defaultAgeGroups(year);
   return {
     year,
-    age_groups: saved.age_groups?.length ? saved.age_groups : defaultAgeGroups(year),
-    classes: saved.classes || {},
+    age_groups,
+    classes: saved.classes || defaultClasses(age_groups),
     mats: Number(saved.mats) > 0 ? Number(saved.mats) : 1,
     bronze: saved.bronze === 'match' ? 'match' : 'two',
   };
