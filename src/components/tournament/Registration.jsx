@@ -318,7 +318,7 @@ export default function Registration({ competition, config, athletes, brackets, 
                       {[
                         a.birth_date ? fmtDate(a.birth_date) : null,
                         GENDERS[a.gender] || null,
-                        (a.weighed_kg ?? a.declared_kg) != null ? `${a.weighed_kg ?? a.declared_kg} kq` : null,
+                        a.weighed_kg != null ? `çəkilib ${a.weighed_kg} kq${a.declared_kg != null && Number(a.declared_kg) !== Number(a.weighed_kg) ? ` (elan ${a.declared_kg})` : ''}` : a.declared_kg != null ? `elan ${a.declared_kg} kq` : null,
                         a.group_type === 'teze' ? TYPES.teze : null,
                         a.club_name,
                         a.coach,
