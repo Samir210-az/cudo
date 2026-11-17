@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { roundName, placements, matchNumbers, scoreDigits } from '../../lib/tournament';
+import { isMain, roundName, placements, matchNumbers, orderedMatches, scoreDigits } from '../../lib/tournament';
 import MatchCard from './MatchCard';
 
 const splitName = (full) => {
@@ -80,9 +80,10 @@ export default function BracketView({ bracket, onSave }) {
   const size = 2 ** bracket.rounds;
   const rounds = [];
   for (let r = 1; r <= bracket.rounds; r += 1) {
-    rounds.push(bracket.matches.filter((m) => m.round === r && !m.bronze).sort((x, y) => x.idx - y.idx));
+    rounds.push(bracket.matches.filter((m) => m.round === r && isMain(m)).sort((x, y) => x.idx - y.idx));
   }
-  const bronze = bracket.matches.find((m) => m.bronze);
+  const bronze = bracket.matches.find((m) => m.bronze && !m.rep);
+  const repechage = orderedMatches(bracket).filter((m) => m.rep);
   const result = placements(bracket);
 
   return (
@@ -109,6 +110,16 @@ export default function BracketView({ bracket, onSave }) {
             }))}
           </div>
         </div>
+        {repechage.length > 0 && (
+          <div className="bk-bronze">
+            <div className="bk-head">Təsəllü və bürünc görüşləri</div>
+            <div className="bk-rep">
+              {repechage.map((m) => (
+                <BracketCard key={m.id} bracket={bracket} match={m} number={numbers.get(m.id)} onPick={setPicked} active={picked === m.id} />
+              ))}
+            </div>
+          </div>
+        )}
         {bronze && (
           <div className="bk-bronze">
             <div className="bk-head">Bürünc görüşü</div>

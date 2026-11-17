@@ -81,6 +81,18 @@ export default function CoachRegistration() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') fetchSchedule(token).then(setSchedule).catch(() => {});
+    };
+    const timer = setInterval(refresh, 45000);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [token]);
+
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
   const reset = () => {

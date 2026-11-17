@@ -1,5 +1,5 @@
 import { buildSchedule, matchNumbers, roundName } from './tournament';
-import { publishSchedule } from './links';
+import { fetchSchedule, publishSchedule } from './links';
 
 const UNKNOWN = 'rəqib hələ bəlli deyil';
 
@@ -37,22 +37,36 @@ function gamesOf(athleteId, brackets, schedule) {
   return { category, bye, games: games.map(({ order, ...rest }) => rest) };
 }
 
-export async function publishSchedules(competition, links, athletes, brackets, config) {
+const stable = (value) => JSON.stringify(value, (_, v) => (
+  v && typeof v === 'object' && !Array.isArray(v)
+    ? Object.fromEntries(Object.entries(v).sort(([x], [y]) => x.localeCompare(y)))
+    : v
+));
+
+export async function publishSchedules(competition, links, athletes, brackets, config, { onlyChanged = false } = {}) {
   const schedule = buildSchedule(brackets, config);
   const now = new Date().toISOString();
+  let written = 0;
   for (const link of links) {
     const mine = athletes.filter((a) => a.link_ref?.startsWith(`${link.id}_`));
     const rows = mine
       .map((a) => ({ name: [a.last_name, a.first_name].filter(Boolean).join(' '), ...gamesOf(a.id, brackets, schedule) }))
       .sort((x, y) => x.name.localeCompare(y.name, 'az'));
-    await publishSchedule(link.id, {
+    const payload = {
       competition_name: competition.name,
       club_name: link.club_name,
       date: competition.held_on || null,
       drawn: brackets.length > 0,
-      updated_at: now,
       rows,
-    });
+    };
+    if (onlyChanged) {
+      const current = await fetchSchedule(link.id);
+      if (!current) continue;
+      const { updated_at: _, ...rest } = current;
+      if (stable(rest) === stable(payload)) continue;
+    }
+    await publishSchedule(link.id, { ...payload, updated_at: now });
+    written += 1;
   }
-  return links.length;
+  return written;
 }

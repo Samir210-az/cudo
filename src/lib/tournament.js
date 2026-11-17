@@ -18,7 +18,10 @@ export const HUNER_BOY_CLASSES = {
 };
 
 export const defaultClasses = (groups) => Object.fromEntries(
-  groups.filter((g) => HUNER_BOY_CLASSES[g.code]).map((g) => [`${g.code}|oğlan`, HUNER_BOY_CLASSES[g.code]]),
+  groups.filter((g) => HUNER_BOY_CLASSES[g.code]).flatMap((g) => [
+    [`${g.code}|oğlan`, HUNER_BOY_CLASSES[g.code]],
+    [`${g.code}|qız`, HUNER_BOY_CLASSES[g.code]],
+  ]),
 );
 
 export function readConfig(competition) {
@@ -32,7 +35,7 @@ export function readConfig(competition) {
     mats: Number(saved.mats) > 0 ? Number(saved.mats) : 1,
     start_time: /^\d{2}:\d{2}$/.test(saved.start_time || '') ? saved.start_time : '10:00',
     match_minutes: Math.min(30, Math.max(1, Number(saved.match_minutes) || 4)),
-    bronze: saved.bronze === 'match' ? 'match' : 'two',
+    bronze: ['two', 'match', 'repechage'].includes(saved.bronze) ? saved.bronze : 'repechage',
   };
 }
 
@@ -81,7 +84,8 @@ export function categoryOf(athlete, config) {
   const type = athlete.group_type === 'teze' ? 'teze' : 'esas';
   const base = `${code.toLowerCase()}-${athlete.gender === 'qız' ? 'q' : 'o'}-${type}`;
   const head = `${code} · ${GENDERS[athlete.gender]}${type === 'teze' ? ' · TƏZƏ' : ''}`;
-  const { classes } = parseClasses(config.classes[`${code}|${athlete.gender}`]);
+  const own = config.classes[`${code}|${athlete.gender}`];
+  const { classes } = parseClasses(own ?? (athlete.gender === 'qız' ? config.classes[`${code}|oğlan`] : undefined));
   if (!classes.length) return { key: `${base}-all`, label: head, code, type, cls: null, max: 0 };
   const weight = weightOf(athlete);
   if (weight === null) return { key: null, problem: 'Çəki yazılmayıb' };
@@ -167,14 +171,67 @@ const emptyMatch = (id, round, idx, extra = {}) => ({
 function advance(bracket, match, winnerId, loserId) {
   const { rounds, matches } = bracket;
   if (bracket.system !== 'elimination') return;
-  if (match.bronze) return;
+  if (match.bronze || match.rep) return;
   if (match.round < rounds) {
-    const next = matches.find((m) => !m.bronze && m.round === match.round + 1 && m.idx === match.idx >> 1);
+    const next = matches.find((m) => isMain(m) && m.round === match.round + 1 && m.idx === match.idx >> 1);
     next[match.idx % 2 === 0 ? 'a' : 'b'] = winnerId;
   }
   if (match.round === rounds - 1) {
-    const bronze = matches.find((m) => m.bronze);
+    const bronze = matches.find((m) => m.bronze && !m.rep);
     if (bronze) bronze[match.idx % 2 === 0 ? 'a' : 'b'] = loserId;
+  }
+}
+
+export const placeLabel = (n) => `${n}-${{ 4: 'cü', 6: 'cı', 3: 'cü' }[n] || 'ci'}`;
+export const isMain = (m) => !m.bronze && !m.rep;
+const halfOf = (bracket, m) => m.idx >> (bracket.rounds - 1 - m.round);
+
+function reviveMatch(previous, fresh) {
+  if (previous && previous.a === fresh.a && previous.b === fresh.b) return previous;
+  return fresh;
+}
+
+function syncRepechage(bracket) {
+  if (!bracket.repechage || bracket.system !== 'elimination' || bracket.rounds < 2) return;
+  const { rounds } = bracket;
+  const keep = bracket.matches.filter((m) => !m.rep);
+  const old = new Map(bracket.matches.filter((m) => m.rep).map((m) => [m.id, m]));
+  const made = [];
+  ['A', 'B'].forEach((side, h) => {
+    const semi = keep.find((m) => isMain(m) && m.round === rounds - 1 && m.idx === h);
+    if (!semi?.winner || semi.bye) return;
+    const loser = semi.winner === semi.a ? semi.b : semi.a;
+    const pool = keep
+      .filter((m) => isMain(m) && !m.bye && m.round < rounds - 1 && halfOf(bracket, m) === h && m.winner === semi.winner)
+      .sort((x, y) => x.round - y.round)
+      .map((m) => (m.winner === m.a ? m.b : m.a));
+    if (!pool.length) return;
+    let carry = pool[0];
+    for (let s = 1; s < pool.length; s += 1) {
+      const id = `R${side}${s}`;
+      const m = reviveMatch(old.get(id), emptyMatch(id, rounds - 1, h, { a: carry, b: pool[s], rep: true, side, step: s }));
+      made.push(m);
+      carry = m.winner;
+    }
+    const id = `B${side}`;
+    made.push(reviveMatch(old.get(id), emptyMatch(id, rounds, h, { a: carry, b: loser, rep: true, bronze: true, side, step: pool.length })));
+  });
+  bracket.matches = [...keep, ...made];
+}
+
+function repLocked(bracket, match) {
+  if (!bracket.repechage || bracket.system !== 'elimination') return;
+  const repOf = (side) => bracket.matches.filter((m) => m.rep && m.side === side);
+  if (match.rep) {
+    if (repOf(match.side).some((m) => m.step > match.step && m.winner) || (!match.bronze && repOf(match.side).some((m) => m.bronze && m.winner))) {
+      throw new Error('Növbəti görüş artıq keçirilib. Əvvəlcə onun nəticəsini silin.');
+    }
+    return;
+  }
+  if (match.bronze || match.round >= bracket.rounds) return;
+  const side = halfOf(bracket, match) === 0 ? 'A' : 'B';
+  if (repOf(side).some((m) => m.winner)) {
+    throw new Error('Təsəllü görüşlər başlayıb. Əvvəlcə onların nəticəsini silin.');
   }
 }
 
@@ -221,25 +278,27 @@ export function makeDraw(athletes, { bronze = 'two', tries = 400 } = {}) {
   if (bronze === 'match' && rounds >= 2) matches.push(emptyMatch('B', rounds, 1, { bronze: true }));
 
   const bracket = { ...base, system: 'elimination', rounds, matches, conflicts: bestScore };
+  if (bronze === 'repechage' && rounds >= 2) bracket.repechage = true;
   for (const m of matches.filter((x) => x.round === 1 && (!x.a || !x.b))) {
     m.winner = m.a || m.b;
     m.bye = true;
     m.method = 'Bye';
     advance(bracket, m, m.winner, null);
   }
+  syncRepechage(bracket);
   return bracket;
 }
 
 const matchById = (bracket, id) => bracket.matches.find((m) => m.id === id);
 
 function nextOf(bracket, match) {
-  if (bracket.system !== 'elimination' || match.bronze) return [];
+  if (bracket.system !== 'elimination' || match.bronze || match.rep) return [];
   const out = [];
   if (match.round < bracket.rounds) {
-    out.push(bracket.matches.find((m) => !m.bronze && m.round === match.round + 1 && m.idx === match.idx >> 1));
+    out.push(bracket.matches.find((m) => isMain(m) && m.round === match.round + 1 && m.idx === match.idx >> 1));
   }
   if (match.round === bracket.rounds - 1) {
-    const bronze = bracket.matches.find((m) => m.bronze);
+    const bronze = bracket.matches.find((m) => m.bronze && !m.rep);
     if (bronze) out.push(bronze);
   }
   return out;
@@ -253,10 +312,12 @@ export function setWinner(source, matchId, winnerId, method) {
   if (match.winner && match.winner !== winnerId && nextOf(bracket, match).some((m) => m.winner)) {
     throw new Error('Növbəti görüş artıq keçirilib. Əvvəlcə onun nəticəsini silin.');
   }
+  if (match.winner !== winnerId) repLocked(bracket, match);
   const loserId = winnerId === match.a ? match.b : match.a;
   match.winner = winnerId;
   match.method = method || null;
   advance(bracket, match, winnerId, loserId);
+  syncRepechage(bracket);
   return bracket;
 }
 
@@ -266,11 +327,13 @@ export function clearWinner(source, matchId) {
   if (!match || match.bye) throw new Error('Bu görüşün nəticəsi silinə bilməz.');
   const next = nextOf(bracket, match);
   if (next.some((m) => m.winner)) throw new Error('Növbəti görüş artıq keçirilib. Əvvəlcə onun nəticəsini silin.');
+  repLocked(bracket, match);
   next.forEach((m) => {
     m[match.idx % 2 === 0 ? 'a' : 'b'] = null;
   });
   match.winner = null;
   match.method = null;
+  syncRepechage(bracket);
   return bracket;
 }
 
@@ -313,9 +376,35 @@ export function placements(bracket) {
     };
   }
 
-  const final = bracket.matches.find((m) => !m.bronze && m.round === bracket.rounds);
+  const final = bracket.matches.find((m) => isMain(m) && m.round === bracket.rounds);
   if (!final?.winner) return { complete: false, tie: false, places: [] };
   const places = [place(1, final.winner), place(2, final.winner === final.a ? final.b : final.a)];
+
+  if (bracket.repechage) {
+    let complete = true;
+    ['A', 'B'].forEach((side, h) => {
+      const semi = bracket.matches.find((m) => isMain(m) && m.round === bracket.rounds - 1 && m.idx === h);
+      if (!semi?.winner) {
+        complete = false;
+        return;
+      }
+      const rep = bracket.matches.filter((m) => m.rep && m.side === side);
+      const bronze = rep.find((m) => m.bronze);
+      if (!bronze) {
+        places.push(place(3, semi.winner === semi.a ? semi.b : semi.a));
+        return;
+      }
+      if (!bronze.winner) {
+        complete = false;
+        return;
+      }
+      places.push(place(3, bronze.winner), place(5, bronze.winner === bronze.a ? bronze.b : bronze.a));
+      const feeder = rep.filter((m) => !m.bronze).sort((x, y) => y.step - x.step)[0];
+      if (feeder?.winner) places.push(place(7, feeder.winner === feeder.a ? feeder.b : feeder.a));
+    });
+    return { complete, tie: false, places: places.sort((x, y) => x.place - y.place) };
+  }
+
   const bronzeMatch = bracket.matches.find((m) => m.bronze);
   if (bronzeMatch) {
     if (!bronzeMatch.winner) return { complete: false, tie: false, places };
@@ -331,6 +420,7 @@ export function placements(bracket) {
 export function roundName(bracket, match) {
   if (bracket.system === 'round_robin') return 'Dövrə görüşü';
   if (match.bronze) return 'Bürünc görüşü';
+  if (match.rep) return 'Təsəllü görüş';
   const left = bracket.rounds - match.round;
   if (left === 0) return 'Final';
   if (left === 1) return 'Yarımfinal';
@@ -358,7 +448,7 @@ export function medalTable(brackets) {
       const row = clubs.get(club);
       if (r.place === 1) row.gold += 1;
       else if (r.place === 2) row.silver += 1;
-      else row.bronze += 1;
+      else if (r.place === 3) row.bronze += 1;
     }
   }
   return [...clubs.values()].sort((a, b) => b.gold - a.gold || b.silver - a.silver || b.bronze - a.bronze);
@@ -410,8 +500,16 @@ export function scoreTotals(bracket) {
   return [...rows.values()].sort((x, y) => y.wins - x.wins || y.ippon - x.ippon || y.wazari - x.wazari || y.yuko - x.yuko);
 }
 
+const orderKey = (bracket, m) => {
+  if (m.rep) return m.bronze ? bracket.rounds - 0.05 : bracket.rounds - 1 + 0.1 * m.step;
+  return m.bronze ? bracket.rounds + 1 : m.round;
+};
+
+export const orderedMatches = (bracket) => [...bracket.matches]
+  .sort((x, y) => orderKey(bracket, x) - orderKey(bracket, y) || x.idx - y.idx);
+
 export function matchNumbers(bracket) {
-  const ordered = [...bracket.matches].sort((x, y) => Number(Boolean(x.bronze)) - Number(Boolean(y.bronze)) || x.round - y.round || x.idx - y.idx);
+  const ordered = orderedMatches(bracket);
   return new Map(ordered.map((m, i) => [m.id, i + 1]));
 }
 
@@ -420,7 +518,7 @@ export const scoreDigits = (side) => (side ? `${side.ippon}${side.wazari}${side.
 export function firstRoundSlots(bracket) {
   if (bracket.system !== 'elimination') return [];
   return bracket.matches
-    .filter((m) => m.round === 1 && !m.bronze)
+    .filter((m) => m.round === 1 && isMain(m))
     .sort((x, y) => x.idx - y.idx)
     .flatMap((m) => [m.a, m.b]);
 }
@@ -442,9 +540,7 @@ export function buildSchedule(brackets, config) {
     let now = h * 60 + m;
     let order = 0;
     for (const b of list) {
-      const games = b.matches
-        .filter((x) => !x.bye)
-        .sort((x, y) => Number(Boolean(x.bronze)) - Number(Boolean(y.bronze)) || x.round - y.round || x.idx - y.idx);
+      const games = orderedMatches(b).filter((x) => !x.bye);
       for (const game of games) {
         order += 1;
         slots.set(`${b.category_key}:${game.id}`, { mat, order, time: clock(now) });
