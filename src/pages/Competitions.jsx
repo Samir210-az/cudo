@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import CompetitionGuide from '../components/CompetitionGuide';
 import CompetitionModal from '../components/CompetitionModal';
 import { Empty, ErrorBox, Icon, Loader, PageHead } from '../components/ui';
 import { fmtDate, todayISO } from '../lib/format';
@@ -24,6 +25,7 @@ function CompetitionRow({ c }) {
 export default function Competitions() {
   const navigate = useNavigate();
   const [adding, setAdding] = useState(false);
+  const [guide, setGuide] = useState(false);
   const { data, loading, error, reload } = useQuery(
     async () => {
       const [competitions, entries] = await Promise.all([list('competitions'), list('competitionEntries')]);
@@ -49,6 +51,9 @@ export default function Competitions() {
         <button type="button" className="btn primary" onClick={() => setAdding(true)}>
           <Icon name="plus" /> Yeni yarış
         </button>
+        <button type="button" className="btn" onClick={() => setGuide(true)}>
+          Təlimat
+        </button>
       </PageHead>
 
       <div className="stack">
@@ -61,6 +66,8 @@ export default function Competitions() {
           {past.length ? <div className="list">{past.map((c) => <CompetitionRow key={c.id} c={c} />)}</div> : <Empty>Keçmiş yarış yoxdur.</Empty>}
         </section>
       </div>
+
+      {guide && <CompetitionGuide onClose={() => setGuide(false)} />}
 
       {adding && (
         <CompetitionModal
