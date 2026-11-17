@@ -370,3 +370,100 @@ export async function overallReportPdf({ title, rows, totals, brand }) {
     `umumi-hesabat-${slug(title)}.pdf`,
   );
 }
+
+const GENDER_PDF = { oğlan: 'Oğlan', qız: 'Qız' };
+const personName = (a) => [a.last_name, a.first_name, a.father_name].filter(Boolean).join(' ');
+
+export async function tournamentRosterPdf(competition, categories, settings) {
+  const content = [];
+  categories.forEach((cat) => {
+    content.push(section(`${cat.label} (${cat.athletes.length})`, [0, 10, 0, 4]));
+    const rows = [...cat.athletes].sort((a, b) => personName(a).localeCompare(personName(b), 'az'));
+    content.push(
+      table(
+        [20, '*', 52, 40, 110, 80],
+        ['№', 'Soyad, ad, ata adı', 'Doğum', 'Çəki', 'Klub', 'Məşqçi'],
+        rows.map((a, i) => [
+          String(i + 1),
+          personName(a),
+          fmtDate(a.birth_date),
+          dash(a.weighed_kg ?? a.declared_kg),
+          dash(a.club_name),
+          dash(a.coach),
+        ]),
+      ),
+    );
+  });
+  if (!categories.length) content.push({ text: 'Kateqoriya yoxdur.', color: '#6b7788' });
+  const total = categories.reduce((s, c) => s + c.athletes.length, 0);
+  const subtitle = [fmtDate(competition.held_on), competition.location, `İştirakçı: ${total}`].filter(Boolean).join(' · ');
+  await save(buildDoc(`${competition.name} · iştirakçı siyahısı`, settings, content, { subtitle }), `turnir-siyahi-${slug(competition.name)}.pdf`);
+}
+
+const roundLabel = (bracket, m) => {
+  if (bracket.system === 'round_robin') return 'Dövrə';
+  if (m.bronze) return 'Bürünc';
+  const left = bracket.rounds - m.round;
+  if (left === 0) return 'Final';
+  if (left === 1) return 'Yarımfinal';
+  return `1/${2 ** left}`;
+};
+
+export async function tournamentDrawPdf(competition, brackets, settings) {
+  const content = [];
+  [...brackets]
+    .sort((a, b) => (a.mat || 99) - (b.mat || 99) || a.label.localeCompare(b.label, 'az', { numeric: true }))
+    .forEach((b) => {
+      const who = (id) => {
+        const p = b.athletes.find((a) => a.id === id);
+        return p ? `${p.name} (${p.club || '—'})` : '—';
+      };
+      content.push(section(`${b.label}${b.mat ? ` · Tatami ${b.mat}` : ''}`, [0, 10, 0, 4]));
+      const matches = b.matches.filter((m) => !m.bye).sort((x, y) => x.round - y.round || x.idx - y.idx);
+      if (!matches.length) {
+        content.push({ text: b.athletes.length ? `Tək iştirakçı: ${b.athletes[0].name}` : 'İştirakçı yoxdur.', color: '#6b7788' });
+        return;
+      }
+      content.push(
+        table(
+          [56, '*', '*'],
+          ['Mərhələ', 'İştirakçı 1', 'İştirakçı 2'],
+          matches.map((m) => [roundLabel(b, m), who(m.a), who(m.b)]),
+        ),
+      );
+    });
+  if (!brackets.length) content.push({ text: 'Püşkatma keçirilməyib.', color: '#6b7788' });
+  await save(buildDoc(`${competition.name} · püşkatma`, settings, content, { subtitle: fmtDate(competition.held_on) }), `turnir-puskatma-${slug(competition.name)}.pdf`);
+}
+
+export async function tournamentResultsPdf(competition, brackets, medals, settings) {
+  const content = [];
+  const NAMES = { 1: 'Qızıl', 2: 'Gümüş', 3: 'Bürünc' };
+  if (medals.length) {
+    content.push(section('Klub üzrə medallar', [0, 10, 0, 4]));
+    content.push(
+      table(
+        [20, '*', 50, 50, 50],
+        ['№', 'Klub', 'Qızıl', 'Gümüş', 'Bürünc'],
+        medals.map((m, i) => [String(i + 1), m.club, String(m.gold), String(m.silver), String(m.bronze)]),
+      ),
+    );
+  }
+  const { placements } = await import('./tournament');
+  [...brackets]
+    .sort((a, b) => a.label.localeCompare(b.label, 'az', { numeric: true }))
+    .forEach((b) => {
+      const r = placements(b);
+      if (!r.places.length) return;
+      content.push(section(b.label, [0, 10, 0, 4]));
+      content.push(
+        table(
+          [60, '*', 150],
+          ['Yer', 'İdmançı', 'Klub'],
+          r.places.map((p) => [NAMES[p.place] || `${p.place}-cü`, p.name, dash(p.club)]),
+        ),
+      );
+    });
+  if (!content.length) content.push({ text: 'Nəticə yoxdur.', color: '#6b7788' });
+  await save(buildDoc(`${competition.name} · nəticələr`, settings, content, { subtitle: fmtDate(competition.held_on) }), `turnir-netice-${slug(competition.name)}.pdf`);
+}

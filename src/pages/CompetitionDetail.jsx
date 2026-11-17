@@ -147,9 +147,11 @@ export default function CompetitionDetail() {
   };
 
   const removeCompetition = async () => {
-    if (!window.confirm(`"${competition.name}" yarışı və iştirakçı siyahısı silinsin?`)) return;
+    if (!window.confirm(`"${competition.name}" yarışı, iştirakçı siyahısı və turnir məlumatları silinsin?`)) return;
     try {
       await removeWhere('competitionEntries', 'competition_id', id);
+      await removeWhere('tournamentAthletes', 'competition_id', id);
+      await removeWhere('tournamentBrackets', 'competition_id', id);
       await remove('competitions', id);
       navigate('/panel/yarislar', { replace: true });
     } catch (delError) {
@@ -176,6 +178,9 @@ export default function CompetitionDetail() {
         subtitle={[fmtDate(competition.held_on), competition.location, `${entries.length} iştirakçı`].filter(Boolean).join(' · ')}
         back={<Link className="back-link" to="/panel/yarislar">← Yarışlar</Link>}
       >
+        <Link className="btn primary" to={`/panel/yarislar/${id}/turnir`}>
+          <Icon name="trophy" /> Turnir idarəetməsi
+        </Link>
         <button type="button" className="btn" onClick={exportPdf} disabled={exporting || !entries.length}>
           <Icon name="download" /> PDF
         </button>

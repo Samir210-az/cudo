@@ -12,6 +12,7 @@ const ChildCard = lazy(() => import('./pages/ChildCard'));
 const Attendance = lazy(() => import('./pages/Attendance'));
 const Competitions = lazy(() => import('./pages/Competitions'));
 const CompetitionDetail = lazy(() => import('./pages/CompetitionDetail'));
+const Tournament = lazy(() => import('./pages/Tournament'));
 const Finance = lazy(() => import('./pages/Finance'));
 const Staff = lazy(() => import('./pages/Staff'));
 const Reports = lazy(() => import('./pages/Reports'));
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="davamiyyet" element={<Attendance />} />
           <Route path="yarislar" element={<Competitions />} />
           <Route path="yarislar/:id" element={<CompetitionDetail />} />
+          <Route path="yarislar/:id/turnir" element={<Tournament />} />
           <Route path="maliyye" element={<Finance />} />
           <Route path="heyet" element={<Staff />} />
           <Route path="hesabat" element={<Reports />} />
