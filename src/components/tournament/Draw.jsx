@@ -64,6 +64,15 @@ export default function Draw({ competition, config, athletes, brackets, reload }
     }
   };
 
+  const saveBracket = async (bracket, next) => {
+    try {
+      await put('tournamentBrackets', bracketId(competition.id, bracket.category_key), next);
+      reload();
+    } catch (err) {
+      notify('Saxlanılmadı: ' + err.message, 'error');
+    }
+  };
+
   const setMat = async (bracket, mat) => {
     try {
       await put('tournamentBrackets', bracketId(competition.id, bracket.category_key), { ...bracket, mat: mat ? Number(mat) : null });
@@ -102,11 +111,11 @@ export default function Draw({ competition, config, athletes, brackets, reload }
     }
   };
 
-  const exportPdf = async () => {
+  const exportPdf = async (only) => {
     setBusy(true);
     try {
-      const [{ tournamentDrawPdf }, { fetchSettings }] = await Promise.all([import('../../lib/pdf'), import('../../lib/settings')]);
-      await tournamentDrawPdf(competition, brackets.filter((b) => live.has(b.category_key)), await fetchSettings());
+      const { tournamentDrawPdf } = await import('../../lib/pdf');
+      await tournamentDrawPdf(competition, only || brackets.filter((b) => live.has(b.category_key)));
     } catch (err) {
       notify('PDF hazırlanmadı: ' + err.message, 'error');
     } finally {
@@ -126,7 +135,7 @@ export default function Draw({ competition, config, athletes, brackets, reload }
       <div className="toolbar">
         <button type="button" className="btn primary" onClick={drawAll} disabled={busy || !pending}>Hamısını püşkat ({pending})</button>
         {config.mats > 1 && <button type="button" className="btn" onClick={spreadMats} disabled={busy || !brackets.length}>Tatamilərə böl</button>}
-        <button type="button" className="btn" onClick={exportPdf} disabled={busy || !brackets.length}><Icon name="download" /> Tablo PDF</button>
+        <button type="button" className="btn" onClick={() => exportPdf()} disabled={busy || !brackets.length}><Icon name="download" /> Tablo PDF</button>
       </div>
       <label className="check-line">
         <input type="checkbox" checked={onlyWeighed} onChange={(e) => setOnlyWeighed(e.target.checked)} />
@@ -162,9 +171,10 @@ export default function Draw({ competition, config, athletes, brackets, reload }
                         </select>
                       )}
                       <button type="button" className="btn sm" onClick={() => setOpen(open === cat.key ? null : cat.key)}>{open === cat.key ? 'Tabloını gizlət' : 'Tabloya bax'}</button>
+                      <button type="button" className="btn sm" onClick={() => exportPdf([bracket])} disabled={busy}><Icon name="download" /> PDF</button>
                       <button type="button" className="btn sm" onClick={() => redraw(cat)} disabled={busy}>Yenidən püşkat</button>
                     </div>
-                    {open === cat.key && <div style={{ marginTop: 12 }}><BracketView bracket={bracket} /></div>}
+                    {open === cat.key && <div style={{ marginTop: 12 }}><BracketView bracket={bracket} onSave={saveBracket} /></div>}
                   </>
                 ) : (
                   <button type="button" className="btn primary" onClick={() => redraw(cat)} disabled={busy}>Püşkat</button>

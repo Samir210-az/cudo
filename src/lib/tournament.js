@@ -394,3 +394,18 @@ export function scoreTotals(bracket) {
   }
   return [...rows.values()].sort((x, y) => y.wins - x.wins || y.ippon - x.ippon || y.wazari - x.wazari || y.yuko - x.yuko);
 }
+
+export function matchNumbers(bracket) {
+  const ordered = [...bracket.matches].sort((x, y) => Number(Boolean(x.bronze)) - Number(Boolean(y.bronze)) || x.round - y.round || x.idx - y.idx);
+  return new Map(ordered.map((m, i) => [m.id, i + 1]));
+}
+
+export const scoreDigits = (side) => (side ? `${side.ippon}${side.wazari}${side.yuko}` : '000');
+
+export function firstRoundSlots(bracket) {
+  if (bracket.system !== 'elimination') return [];
+  return bracket.matches
+    .filter((m) => m.round === 1 && !m.bronze)
+    .sort((x, y) => x.idx - y.idx)
+    .flatMap((m) => [m.a, m.b]);
+}

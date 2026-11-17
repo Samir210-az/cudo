@@ -1,6 +1,7 @@
 import {
   calcAge, formatPhone, fmtDate, fmtNum, fmtPeriod, fullName, gradeLabel, todayISO, slugify as slug, trainingDuration,
 } from './format';
+import { firstRoundSlots, matchNumbers, placements } from './tournament';
 
 let engine;
 function loadEngine() {
@@ -400,40 +401,192 @@ export async function tournamentRosterPdf(competition, categories, settings) {
   await save(buildDoc(`${competition.name} · iştirakçı siyahısı`, settings, content, { subtitle }), `turnir-siyahi-${slug(competition.name)}.pdf`);
 }
 
-const roundLabel = (bracket, m) => {
-  if (bracket.system === 'round_robin') return 'Dövrə';
-  if (m.bronze) return 'Bürünc';
-  const left = bracket.rounds - m.round;
-  if (left === 0) return 'Final';
-  if (left === 1) return 'Yarımfinal';
-  return `1/${2 ** left}`;
+const PAGE_W = 842;
+const PAGE_H = 595;
+const EDGE = 30;
+const LINE = '#222222';
+
+const upperName = (full) => {
+  const [last = '', ...rest] = (full || '').split(' ');
+  return [last.toLocaleUpperCase('az'), ...rest].join(' ');
+};
+const shortName = (full) => {
+  const [last = '', first = ''] = (full || '').split(' ');
+  return `${last.toLocaleUpperCase('az')} ${first}`.trim();
+};
+const fit = (text, width, size) => {
+  const max = Math.max(3, Math.floor(width / (size * 0.53)));
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 };
 
-export async function tournamentDrawPdf(competition, brackets, settings) {
-  const content = [];
-  [...brackets]
-    .sort((a, b) => (a.mat || 99) - (b.mat || 99) || a.label.localeCompare(b.label, 'az', { numeric: true }))
-    .forEach((b) => {
-      const who = (id) => {
-        const p = b.athletes.find((a) => a.id === id);
-        return p ? `${p.name} (${p.club || '—'})` : '—';
-      };
-      content.push(section(`${b.label}${b.mat ? ` · Tatami ${b.mat}` : ''}`, [0, 10, 0, 4]));
-      const matches = b.matches.filter((m) => !m.bye).sort((x, y) => x.round - y.round || x.idx - y.idx);
-      if (!matches.length) {
-        content.push({ text: b.athletes.length ? `Tək iştirakçı: ${b.athletes[0].name}` : 'İştirakçı yoxdur.', color: '#6b7788' });
-        return;
-      }
-      content.push(
-        table(
-          [56, '*', '*'],
-          ['Mərhələ', 'İştirakçı 1', 'İştirakçı 2'],
-          matches.map((m) => [roundLabel(b, m), who(m.a), who(m.b)]),
-        ),
-      );
+function categoryTitle(label) {
+  const [age = '', gender = '', weight = ''] = (label || '').split(' · ');
+  const kg = weight.replace(/[−–]/g, '-').replace(/\s*kq$/i, '').replace(/\s+/g, '');
+  const girls = gender.toLocaleLowerCase('az') === 'qız' ? ' QIZ' : '';
+  return `${age}${kg} KG${girls}`.toLocaleUpperCase('az');
+}
+
+function sheetHeader(competition, label) {
+  const when = [competition.location, fmtDate(competition.held_on)].filter(Boolean).join(', ').toLocaleUpperCase('az');
+  return [
+    { image: 'logo', width: 56, absolutePosition: { x: EDGE, y: 24 } },
+    { text: (competition.name || '').toLocaleUpperCase('az'), bold: true, fontSize: 12, absolutePosition: { x: EDGE + 68, y: 30 } },
+    { text: when, color: '#444444', fontSize: 10, absolutePosition: { x: EDGE + 68, y: 48 } },
+    {
+      columns: [{ width: '*', text: '' }, { width: 330, text: label, alignment: 'right', bold: true, fontSize: 20 }],
+      absolutePosition: { x: PAGE_W - EDGE - 330 - 8, y: 28 },
+    },
+    { canvas: [{ type: 'line', x1: EDGE, y1: 84, x2: PAGE_W - EDGE, y2: 84, lineWidth: 1, lineColor: LINE }], absolutePosition: { x: 0, y: 0 } },
+  ];
+}
+
+function participantsPage(bracket, order) {
+  const rows = order.map((id, i) => {
+    const p = bracket.athletes.find((a) => a.id === id);
+    return [{ text: String(i + 1), alignment: 'center' }, upperName(p?.name), dash(p?.club)];
+  });
+  return {
+    margin: [0, 78, 0, 0],
+    table: {
+      headerRows: 1,
+      widths: [34, '*', 230],
+      body: [
+        ['Num.', 'İştirakçı', 'Klub'].map((t) => ({ text: t, bold: true, fillColor: '#cfe6bd' })),
+        ...rows,
+      ],
+    },
+    layout: { hLineWidth: () => 0.7, vLineWidth: () => 0.7, hLineColor: () => LINE, vLineColor: () => LINE, paddingTop: () => 3, paddingBottom: () => 3 },
+  };
+}
+
+function bracketSheet(bracket, numbers) {
+  const R = bracket.rounds;
+  const size = 2 ** R;
+  const top = 100;
+  const slotH = Math.min(26, Math.floor((PAGE_H - top - 44) / size));
+  const fs = Math.max(4.5, Math.min(9, slotH * 0.6));
+  const noW = 24;
+  const boxL = EDGE + noW;
+  const boxW = 176;
+  const boxR = boxL + boxW;
+  const colW = Math.min(118, (PAGE_W - EDGE - boxR) / (R + 0.6));
+  const xj = (r) => boxR + (r - 1) * colW;
+  const cy = (r, i) => top + (i * 2 ** r + 2 ** (r - 1)) * slotH;
+  const nameOf = (id) => bracket.athletes.find((a) => a.id === id);
+  const lines = [];
+  const nodes = [];
+  const seg = (x1, y1, x2, y2, w = 0.9) => lines.push({ type: 'line', x1, y1, x2, y2, lineWidth: w, lineColor: LINE });
+  const text = (x, y, t, o = {}) => nodes.push({ text: t, fontSize: fs, absolutePosition: { x, y }, ...o });
+  const rightText = (xr, y, t, o = {}) => nodes.push({
+    columns: [{ width: 40, text: t, alignment: 'right', fontSize: fs, ...o }], absolutePosition: { x: xr - 40, y },
+  });
+
+  const byRound = (r) => bracket.matches.filter((m) => m.round === r && !m.bronze).sort((x, y) => x.idx - y.idx);
+
+  byRound(1).forEach((m) => {
+    const y0 = top + m.idx * 2 * slotH;
+    lines.push({ type: 'rect', x: EDGE, y: y0, w: noW, h: slotH * 2, lineWidth: 0.9, lineColor: LINE });
+    lines.push({ type: 'rect', x: boxL, y: y0, w: boxW, h: slotH * 2, lineWidth: 0.9, lineColor: LINE });
+    lines.push({ type: 'rect', x: boxL, y: y0 + slotH, w: boxW, h: slotH, color: '#ececec', lineWidth: 0.9, lineColor: LINE });
+    nodes.push({
+      columns: [{ width: noW, text: String(numbers.get(m.id)), alignment: 'center', fontSize: fs }],
+      absolutePosition: { x: EDGE, y: y0 + slotH - fs * 0.6 },
     });
-  if (!brackets.length) content.push({ text: 'Püşkatma keçirilməyib.', color: '#6b7788' });
-  await save(buildDoc(`${competition.name} · püşkatma`, settings, content, { subtitle: fmtDate(competition.held_on) }), `turnir-puskatma-${slug(competition.name)}.pdf`);
+    [m.a, m.b].forEach((id, k) => {
+      const p = nameOf(id);
+      if (p) text(boxL + 4, y0 + k * slotH + (slotH - fs) / 2 - 0.5, fit(upperName(p.name), boxW - 8, fs));
+    });
+  });
+
+  for (let r = 1; r <= R; r += 1) {
+    byRound(r).forEach((m) => {
+      const y = cy(r, m.idx);
+      const x1 = xj(r);
+      const x2 = xj(r + 1);
+      seg(x1, y, x2, y, 1);
+      const w = nameOf(m.winner);
+      if (w) text(x1 + 3, y - fs - 1.5, fit(shortName(w.name), colW - 6, fs));
+      if (r < R && m.idx % 2 === 0) {
+        const sibling = cy(r, m.idx + 1);
+        seg(x2, y, x2, sibling, 1);
+        const parent = byRound(r + 1)[m.idx >> 1];
+        rightText(x2 - 3, (y + sibling) / 2 - fs / 2, String(numbers.get(parent.id)));
+      }
+    });
+  }
+  text(xj(R + 1) - fs * 1.8, cy(R, 0) + 2, '1.', { bold: true });
+
+  const bronze = bracket.matches.find((m) => m.bronze);
+  const done = placements(bracket);
+  const foot = [];
+  if (bronze) {
+    const yb = PAGE_H - 62;
+    const bx = PAGE_W - EDGE - 250;
+    text(bx, yb - fs - 4, 'Bürünc görüşü', { bold: true });
+    lines.push({ type: 'rect', x: bx, y: yb, w: 250, h: slotH * 2, lineWidth: 0.9, lineColor: LINE });
+    seg(bx, yb + slotH, bx + 250, yb + slotH, 0.9);
+    [bronze.a, bronze.b].forEach((id, k) => {
+      const p = nameOf(id);
+      if (p) text(bx + 4, yb + k * slotH + (slotH - fs) / 2, fit(upperName(p.name), 240, fs));
+    });
+  }
+  if (done.complete) {
+    foot.push({
+      text: done.places.map((p) => `${p.place}. ${shortName(p.name)}`).join('    '),
+      fontSize: 9, absolutePosition: { x: EDGE, y: PAGE_H - 30 },
+    });
+  }
+  return [{ canvas: lines, absolutePosition: { x: 0, y: 0 } }, ...nodes, ...foot];
+}
+
+function roundRobinSheet(bracket, numbers) {
+  const body = bracket.matches.map((m) => {
+    const a = bracket.athletes.find((p) => p.id === m.a);
+    const b = bracket.athletes.find((p) => p.id === m.b);
+    const win = bracket.athletes.find((p) => p.id === m.winner);
+    return [{ text: String(numbers.get(m.id)), alignment: 'center' }, upperName(a?.name), upperName(b?.name), win ? upperName(win.name) : ''];
+  });
+  return {
+    margin: [0, 16, 0, 0],
+    table: {
+      headerRows: 1,
+      widths: [34, '*', '*', '*'],
+      body: [['Num.', 'Qırmızı / ağ', 'Mavi', 'Qalib'].map((t) => ({ text: t, bold: true, fillColor: '#cfe6bd' })), ...body],
+    },
+    layout: { hLineWidth: () => 0.7, vLineWidth: () => 0.7, hLineColor: () => LINE, vLineColor: () => LINE, paddingTop: () => 3, paddingBottom: () => 3 },
+  };
+}
+
+export function tournamentDrawDoc(competition, brackets) {
+  const content = [];
+  const sorted = [...brackets].sort((a, b) => (a.mat || 99) - (b.mat || 99) || a.label.localeCompare(b.label, 'az', { numeric: true }));
+  sorted.forEach((b, i) => {
+    const numbers = matchNumbers(b);
+    const label = `${categoryTitle(b.label)} (${b.athletes.length})`;
+    const order = b.system === 'elimination' ? firstRoundSlots(b).filter(Boolean) : b.athletes.map((a) => a.id);
+    content.push({ text: '', ...(i ? { pageBreak: 'before' } : {}) });
+    content.push(...sheetHeader(competition, label));
+    content.push(participantsPage(b, order));
+    if (b.system === 'round_robin') content.push(roundRobinSheet(b, numbers));
+    if (b.system === 'elimination') {
+      content.push({ text: '', pageBreak: 'before' });
+      content.push(...sheetHeader(competition, label));
+      content.push(...bracketSheet(b, numbers));
+    }
+  });
+  if (!sorted.length) content.push({ text: 'Püşkatma keçirilməyib.', color: '#6b7788' });
+  return {
+    pageSize: 'A4',
+    pageOrientation: 'landscape',
+    pageMargins: [EDGE, EDGE, EDGE, EDGE],
+    defaultStyle: { font: 'Roboto', fontSize: 9.5, color: '#111111' },
+    content,
+  };
+}
+
+export async function tournamentDrawPdf(competition, brackets) {
+  const only = brackets.length === 1 ? brackets[0].label : competition.name;
+  await save(tournamentDrawDoc(competition, brackets), `puskatma-${slug(only)}.pdf`);
 }
 
 export async function tournamentResultsPdf(competition, brackets, medals, settings) {
@@ -449,7 +602,6 @@ export async function tournamentResultsPdf(competition, brackets, medals, settin
       ),
     );
   }
-  const { placements } = await import('./tournament');
   [...brackets]
     .sort((a, b) => a.label.localeCompare(b.label, 'az', { numeric: true }))
     .forEach((b) => {
