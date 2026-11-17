@@ -1,5 +1,8 @@
 import { Modal } from './ui';
 
+const WARNING =
+  'Yarış gedərkən admin paneldə "Turnir idarəetməsi" səhifəsi (Yarışlar → yarışı açın → Turnir idarəetməsi, "5. Görüşlər" bölməsi) açıq qalmalıdır. Məşqçilərin gördüyü cədvəlin avtomatik yenilənməsi məhz bu səhifədən gedir. Telefon söndükdə və ya səhifə bağlandıqda yenilənmə dayanır. Yarış günü həmin səhifəni ayrıca bir noutbukda və ya sabit telefonda açıq saxlayın.';
+
 const SECTIONS = [
   {
     title: 'Ümumi görünüş',
@@ -89,6 +92,7 @@ const SECTIONS = [
   },
   {
     title: '5. Görüşlərin keçirilməsi',
+    warn: true,
     intro: 'Hər görüş bitdikdən sonra nəticəni telefonda yazırsınız. Qalib növbəti mərhələyə özü keçir.',
     steps: [
       '"5. Görüşlər" bölməsini açın. Yuxarıda başlama saatı və hər tataminin təxmini bitmə vaxtı yazılır. Tatami birdən çoxdursa, siyahıdan seçib yalnız bir tataminin görüşlərini görə bilərsiniz.',
@@ -182,6 +186,7 @@ function Section({ s, open }) {
             ))}
           </div>
         )}
+        {s.warn && <p className="guide-warn"><strong>Vacib.</strong> {WARNING}</p>}
         {s.note && <p className="guide-note">{s.note}</p>}
       </div>
     </details>
@@ -192,6 +197,7 @@ export default function CompetitionGuide({ onClose }) {
   return (
     <Modal title="Yarışın keçirilmə təlimatı" onClose={onClose}>
       <div className="guide">
+        <p className="guide-warn"><strong>Vacib.</strong> {WARNING}</p>
         {SECTIONS.map((s, i) => <Section key={s.title} s={s} open={i === 0} />)}
       </div>
     </Modal>
