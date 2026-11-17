@@ -30,6 +30,8 @@ export function readConfig(competition) {
     age_groups,
     classes: saved.classes || defaultClasses(age_groups),
     mats: Number(saved.mats) > 0 ? Number(saved.mats) : 1,
+    start_time: /^\d{2}:\d{2}$/.test(saved.start_time || '') ? saved.start_time : '10:00',
+    match_minutes: Math.min(30, Math.max(1, Number(saved.match_minutes) || 4)),
     bronze: saved.bronze === 'match' ? 'match' : 'two',
   };
 }
@@ -421,4 +423,35 @@ export function firstRoundSlots(bracket) {
     .filter((m) => m.round === 1 && !m.bronze)
     .sort((x, y) => x.idx - y.idx)
     .flatMap((m) => [m.a, m.b]);
+}
+
+const clock = (minutes) => `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+export function buildSchedule(brackets, config) {
+  const [h, m] = config.start_time.split(':').map(Number);
+  const byMat = new Map();
+  for (const b of brackets) {
+    const mat = b.mat || 1;
+    if (!byMat.has(mat)) byMat.set(mat, []);
+    byMat.get(mat).push(b);
+  }
+  const slots = new Map();
+  const ends = new Map();
+  for (const [mat, list] of byMat) {
+    list.sort((x, y) => x.label.localeCompare(y.label, 'az', { numeric: true }));
+    let now = h * 60 + m;
+    let order = 0;
+    for (const b of list) {
+      const games = b.matches
+        .filter((x) => !x.bye)
+        .sort((x, y) => Number(Boolean(x.bronze)) - Number(Boolean(y.bronze)) || x.round - y.round || x.idx - y.idx);
+      for (const game of games) {
+        order += 1;
+        slots.set(`${b.category_key}:${game.id}`, { mat, order, time: clock(now) });
+        now += config.match_minutes;
+      }
+    }
+    ends.set(mat, clock(now));
+  }
+  return { slots, ends };
 }
