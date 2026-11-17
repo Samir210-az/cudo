@@ -1,7 +1,7 @@
 import { Modal } from './ui';
 
 const WARNING =
-  'Turnir səhifəsi açıq qalmalıdır. Məşqçi cədvəlinin avtomatik yenilənməsi həmin səhifədən gedir. Telefon söndüsə və ya səhifə bağlandısa, yenilənmə dayanır. Yarış günü turniri ayrıca bir noutbuka və ya sabit telefona qoyub açıq saxlamaq yaxşıdır.';
+  'Yarış gedərkən admin paneldə "Turnir idarəetməsi" səhifəsi (Yarışlar → yarışı açın → Turnir idarəetməsi, "5. Görüşlər" bölməsi) açıq qalmalıdır. Məşqçilərin gördüyü cədvəlin avtomatik yenilənməsi məhz bu səhifədən gedir. Telefon söndükdə və ya səhifə bağlandıqda yenilənmə dayanır. Yarış günü həmin səhifəni ayrıca bir noutbukda və ya sabit telefonda açıq saxlayın.';
 
 const SECTIONS = [
   {

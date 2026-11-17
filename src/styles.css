@@ -651,5 +651,5 @@ details.more[open] .more-list { display: grid; gap: 8px; margin-top: 8px; }
 .guide-note { padding: 8px 10px; border-left: 4px solid #e8c27a; background: rgba(232, 194, 122, 0.08); border-radius: 6px; }
 .guide-table { display: grid; gap: 8px; margin-top: 8px; }
 .guide-row { display: grid; gap: 2px; padding: 8px 10px; border-left: 4px solid #c3112b; background: rgba(255, 255, 255, 0.04); border-radius: 8px; }
-.guide-warn { padding: 10px 12px; border: 1px solid #c3112b; border-left-width: 5px; background: rgba(195, 17, 43, 0.12); border-radius: 8px; color: #ff6b7d; }
-.guide-warn strong { color: #ff3b52; text-transform: uppercase; }
+.guide-warn { padding: 10px 12px; border: 1px solid #ff3b52; border-left-width: 5px; background: rgba(255, 59, 82, 0.14); border-radius: 8px; color: #ff4d63; font-weight: 700; }
+.guide-warn strong { color: #ff2a44; text-transform: uppercase; }
