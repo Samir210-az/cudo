@@ -578,3 +578,6 @@ details.cat summary .row-title { flex: 1; min-width: 120px; }
 
 .slot-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 2px 6px; font-size: 0.95rem; }
 .slot-line strong { font-size: 1.05rem; }
+.game { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(120, 130, 150, 0.1); }
+.game .slot-line { margin: 0 0 4px; }
+.coach-wrap .group-title { flex-wrap: wrap; gap: 8px; }
