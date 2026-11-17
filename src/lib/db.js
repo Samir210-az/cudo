@@ -50,6 +50,7 @@ export async function addMany(name, rows) {
   await batch.commit();
 }
 
+export const put = (name, id, data) => setDoc(docRef(name, id), defined(data));
 export const update = (name, id, data) => updateDoc(docRef(name, id), defined(data));
 export const remove = (name, id) => deleteDoc(docRef(name, id));
 

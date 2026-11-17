@@ -393,3 +393,54 @@ a.row:hover, label.row:hover { background: #f3f6fc; }
 
 .frozen-bar { margin-bottom: 10px; padding: 10px 14px; border-radius: var(--radius); border-left: 6px solid var(--red); background: #fdecee; color: var(--red-dark); font-weight: 650; }
 .branch-phone { display: block; }
+
+/* Turnir idarəetməsi */
+.tabs.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.tabs.scroll::-webkit-scrollbar { display: none; }
+.tabs.scroll .tab { white-space: nowrap; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+.filters .search { flex: 1 1 200px; }
+.check-line { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 0.92rem; }
+.weigh-input { max-width: 96px; }
+.bulk-rows { display: grid; gap: 8px; margin-top: 14px; }
+.bulk-row { display: grid; gap: 6px; grid-template-columns: 1fr 1fr; padding: 10px; border: 1px solid var(--line); border-radius: 12px; }
+.bulk-row input[type='date'] { grid-column: 1 / -1; }
+.setting-row { display: grid; gap: 6px; grid-template-columns: 1fr 1fr 1fr auto; align-items: center; margin-bottom: 8px; }
+details.cat { border-top: 1px solid var(--line); padding: 10px 4px; }
+details.cat:first-child { border-top: 0; }
+details.cat summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; cursor: pointer; list-style: none; min-height: 36px; }
+details.cat summary::-webkit-details-marker { display: none; }
+details.cat summary .row-title { flex: 1; min-width: 120px; }
+.cat-body { padding: 8px 0 4px; }
+.cat-athlete { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; }
+.bracket { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+.bracket-col { min-width: 220px; flex: none; display: flex; flex-direction: column; }
+.bracket-head { font-weight: 700; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em; }
+.bracket-matches { display: flex; flex-direction: column; justify-content: space-around; gap: 10px; flex: 1; }
+.rr { display: grid; gap: 10px; }
+.match-box { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
+.match-box.bye { opacity: 0.7; }
+.side { display: flex; flex-direction: column; padding: 7px 10px; min-height: 40px; justify-content: center; }
+.side + .side { border-top: 1px solid var(--line); }
+.side-name { font-weight: 650; overflow-wrap: anywhere; }
+.side-club { color: var(--muted); font-size: 0.78rem; }
+.side-empty, .bye-label { color: var(--muted); font-style: italic; }
+.side.win { background: #e5f6ec; }
+.side.win .side-name { color: var(--ok); }
+.side.lose .side-name { color: var(--muted); font-weight: 500; }
+.match-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+.match-card.done { border-color: #bfe3cd; }
+.match-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; font-weight: 650; font-size: 0.92rem; }
+.match-sides { display: grid; grid-template-columns: 1fr; gap: 8px; align-items: stretch; }
+.vs { text-align: center; color: var(--muted); font-weight: 700; font-size: 0.8rem; }
+.winner-btn { display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-height: 56px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: #fff; }
+.winner-btn:hover:not([disabled]) { border-color: var(--ok); }
+.winner-btn.picked { border-color: var(--ok); background: #e5f6ec; }
+.winner-btn[disabled] { opacity: 0.55; }
+.match-foot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+@media (min-width: 720px) {
+  .bulk-row { grid-template-columns: 1.3fr 1.3fr 1.2fr 0.9fr 0.8fr; }
+  .bulk-row input[type='date'] { grid-column: auto; }
+  .match-sides { grid-template-columns: 1fr auto 1fr; }
+}
