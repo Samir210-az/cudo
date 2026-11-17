@@ -2,22 +2,53 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Admin hesabının emaili: telefon nömrəsi + @cudo-klub.vercel.app
-    // Yeni admin əlavə etmək üçün siyahıya vergüllə yeni email yazın.
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email in ['ADMIN_TELEFON@cudo-klub.vercel.app'];
+        && request.auth.token.email in [
+          '0552107111@cudo-klub.vercel.app',
+          '0553753535@cudo-klub.vercel.app'
+        ];
     }
 
-    // İctimai saytda göstərilən klub məlumatı (ad, telefon, ünvan, cədvəl) hamıya açıqdır.
-    // Yalnız klubun öz sənədi açıqdır; uşaqlar, ödənişlər və digər alt kolleksiyalar admin üçündür.
+    function linkActive(token) {
+      return get(/databases/$(database)/documents/registrationLinks/$(token)).data.active == true;
+    }
+
+    function validEntry(d) {
+      return d.keys().hasOnly([
+          'last_name', 'first_name', 'father_name', 'birth_date', 'gender',
+          'declared_kg', 'group_type', 'club_name', 'coach', 'created_at', 'updated_at'
+        ])
+        && d.last_name is string && d.last_name.size() > 0 && d.last_name.size() <= 60
+        && d.first_name is string && d.first_name.size() > 0 && d.first_name.size() <= 60
+        && d.birth_date is string && d.birth_date.size() == 10
+        && d.gender in ['oğlan', 'qız']
+        && (d.declared_kg == null || (d.declared_kg is number && d.declared_kg >= 5 && d.declared_kg <= 200));
+    }
+
     match /clubs/{clubId} {
       allow read: if true;
     }
 
-    // Köçürmədən əvvəlki köhnə ayar sənədi
     match /settings/club {
       allow read: if true;
+    }
+
+    // Məşqçi linki: kodu bilən yalnız öz sənədini tək-tək oxuya bilər, siyahılaya bilməz.
+    match /registrationLinks/{token} {
+      allow get: if resource.data.active == true;
+    }
+
+    // Məşqçinin əlavə etdiyi iştirakçılar: yalnız aktiv linkin altında.
+    match /registrationLinks/{token}/athletes/{athleteId} {
+      allow read: if linkActive(token);
+      allow create, update: if linkActive(token) && validEntry(request.resource.data);
+      allow delete: if linkActive(token);
+    }
+
+    // Admin tərəfindən dərc olunan cədvəl: yalnız ad, tatami, saat, rəqib.
+    match /publicSchedule/{token} {
+      allow get: if true;
     }
 
     match /{document=**} {

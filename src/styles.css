@@ -567,3 +567,7 @@ details.cat summary .row-title { flex: 1; min-width: 120px; }
   .fix-name { grid-column: 1 / -1; }
   .fix-row input[type='number'] { grid-column: auto; }
 }
+.coach-page { min-height: 100vh; padding: 16px 12px 48px; }
+.coach-wrap { max-width: 560px; margin: 0 auto; display: grid; gap: 14px; }
+.coach-head h1 { margin: 0 0 4px; font-size: 1.35rem; }
+.coach-head p { margin: 0; color: var(--muted); }
