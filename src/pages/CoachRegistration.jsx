@@ -3,15 +3,63 @@ import { useParams } from 'react-router-dom';
 import { Empty, Field, Icon, Loader, useToast } from '../components/ui';
 import { toPayload, validateAthlete } from '../components/tournament/AthleteForm';
 import { calcAge, fmtDate, todayISO } from '../lib/format';
-import { deleteEntry, fetchLink, listEntries, saveEntry } from '../lib/links';
+import { deleteEntry, fetchLink, fetchSchedule, listEntries, saveEntry } from '../lib/links';
 
 const BRAND_LABEL = 'Hünər idman klubu';
 const blank = { last_name: '', first_name: '', father_name: '', birth_date: '', gender: '', declared_kg: '' };
+
+const gameText = (g) => `${g.round}, №${g.number}${g.mat ? `, Tatami ${g.mat}` : ''}${g.time ? `, saat ${g.time}` : ''}: ${g.opponent}${g.opponent_club ? ` (${g.opponent_club})` : ''}`;
+
+function shareText(schedule) {
+  const lines = [`${schedule.competition_name}${schedule.date ? ` (${fmtDate(schedule.date)})` : ''}`, schedule.club_name, ''];
+  for (const r of schedule.rows) {
+    lines.push(`${r.name}${r.category ? ` · ${r.category}` : ''}`);
+    if (r.games.length) r.games.forEach((g) => lines.push(`  ${gameText(g)}`));
+    else lines.push(r.bye ? '  Birinci mərhələdən azaddır' : '  Görüş hələ təyin olunmayıb');
+    lines.push('');
+  }
+  return lines.join('\n').trim();
+}
+
+function Schedule({ schedule }) {
+  if (!schedule.rows.length) return null;
+  return (
+    <section className="card">
+      <div className="group-title" style={{ marginTop: 0 }}>
+        <h2 style={{ margin: 0 }}>Yarış cədvəli</h2>
+        <a className="btn" href={`https://wa.me/?text=${encodeURIComponent(shareText(schedule))}`} target="_blank" rel="noreferrer">WhatsApp-la göndər</a>
+      </div>
+      {!schedule.drawn && <p className="muted">Püşkatma hələ keçirilməyib. Cədvəl hazır olanda burada görünəcək.</p>}
+      <div className="list">
+        {schedule.rows.map((r) => (
+          <div className="row" key={r.name + (r.category || '')} style={{ display: 'block' }}>
+            <div className="row-title">{r.name}</div>
+            {r.category && <div className="row-sub">{r.category}</div>}
+            {r.games.map((g) => (
+              <div className="game" key={g.number}>
+                <div className="slot-line">
+                  <span className="badge">{g.mat ? `Tatami ${g.mat}` : 'Tatami —'}</span>
+                  <strong>{g.time || '—'}</strong>
+                  {g.result && <span className={`badge ${g.result === 'qalib' ? 'ok' : 'bad'}`}>{g.result}</span>}
+                </div>
+                <div className="row-sub">№{g.number} · {g.round}</div>
+                <div>{g.opponent}{g.opponent_club ? ` (${g.opponent_club})` : ''}</div>
+              </div>
+            ))}
+            {!r.games.length && schedule.drawn && <div className="row-sub">{r.bye ? 'Birinci mərhələdən azaddır, rəqib sonra bəlli olacaq.' : 'Görüş hələ təyin olunmayıb.'}</div>}
+          </div>
+        ))}
+      </div>
+      <p className="muted" style={{ marginBottom: 0, marginTop: 10 }}>Yenilənib: {new Date(schedule.updated_at).toLocaleString('az')}</p>
+    </section>
+  );
+}
 
 export default function CoachRegistration() {
   const { token } = useParams();
   const notify = useToast();
   const [link, setLink] = useState(null);
+  const [schedule, setSchedule] = useState(null);
   const [rows, setRows] = useState([]);
   const [error, setError] = useState('');
   const [form, setForm] = useState(blank);
@@ -23,6 +71,7 @@ export default function CoachRegistration() {
       const l = await fetchLink(token);
       setLink(l);
       setRows(await listEntries(token));
+      setSchedule(await fetchSchedule(token).catch(() => null));
     } catch (err) {
       setError(err.message);
     }
@@ -114,6 +163,8 @@ export default function CoachRegistration() {
           <h1>{link.competition_name}</h1>
           <p>{link.club_name} · iştirakçı qeydiyyatı</p>
         </header>
+
+        {schedule && <Schedule schedule={schedule} />}
 
         <form className="card" onSubmit={submit}>
           <h2 style={{ marginTop: 0 }}>{editing ? 'Məlumatı düzəlt' : 'İdmançı əlavə et'}</h2>

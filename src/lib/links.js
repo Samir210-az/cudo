@@ -63,3 +63,10 @@ export async function removeLink(token) {
   batch.delete(doc(firestore, LINKS, token));
   await batch.commit();
 }
+
+export const publishSchedule = (token, data) => setDoc(doc(firestore, 'publicSchedule', token), data);
+
+export async function fetchSchedule(token) {
+  const snap = await getDoc(doc(firestore, 'publicSchedule', token));
+  return snap.exists() ? snap.data() : null;
+}

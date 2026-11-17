@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { publishSchedules } from '../../lib/publish';
 import { Empty, ErrorBox, Icon, Loader, Modal, useToast } from '../ui';
 import { add, update } from '../../lib/db';
 import { useQuery } from '../../lib/hooks';
@@ -42,7 +43,7 @@ export function syncLinks(competition, athletes) {
   return running;
 }
 
-export default function BranchLinks({ competition, athletes, onClose, onSaved }) {
+export default function BranchLinks({ competition, config, athletes, brackets, onClose, onSaved }) {
   const notify = useToast();
   const [club, setClub] = useState('');
   const [busy, setBusy] = useState(false);
@@ -75,6 +76,19 @@ export default function BranchLinks({ competition, athletes, onClose, onSaved })
       notify('Link kopyalandı.');
     } catch {
       window.prompt('Linki kopyalayın:', linkUrl(l.id));
+    }
+  };
+
+  const publish = async () => {
+    if (!brackets.length && !window.confirm('Püşkatma hələ keçirilməyib. Məşqçilər yalnız "cədvəl hazırlanır" görəcək. Davam edilsin?')) return;
+    setBusy(true);
+    try {
+      const n = await publishSchedules(competition, data || [], athletes, brackets, config);
+      notify(`Cədvəl ${n} linkdə dərc edildi.`);
+    } catch (err) {
+      notify('Dərc edilmədi: ' + err.message, 'error');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -122,6 +136,7 @@ export default function BranchLinks({ competition, athletes, onClose, onSaved })
         />
         <button type="button" className="btn primary" disabled={busy} onClick={create}><Icon name="plus" /> Link yarat</button>
         <button type="button" className="btn" disabled={busy} onClick={refresh}>İndi yenilə</button>
+        <button type="button" className="btn primary" disabled={busy || !data?.length} onClick={publish}>Cədvəli dərc et</button>
       </div>
 
       {loading && !data ? <Loader /> : error ? <ErrorBox error={error} onRetry={reload} /> : data.length ? (
