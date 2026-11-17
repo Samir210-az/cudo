@@ -9,6 +9,8 @@ export default function TournamentSettings({ competition, config, hasBrackets, r
   const [classes, setClasses] = useState(config.classes);
   const [mats, setMats] = useState(config.mats);
   const [bronze, setBronze] = useState(config.bronze);
+  const [startTime, setStartTime] = useState(config.start_time);
+  const [minutes, setMinutes] = useState(config.match_minutes);
   const [busy, setBusy] = useState(false);
 
   const setGroup = (i, key, value) => setGroups((prev) => prev.map((g, idx) => (idx === i ? { ...g, [key]: value } : g)));
@@ -28,6 +30,8 @@ export default function TournamentSettings({ competition, config, hasBrackets, r
           classes: Object.fromEntries(Object.entries(classes).filter(([, v]) => v.trim())),
           mats: Math.max(1, Math.min(12, Number(mats) || 1)),
           bronze,
+          start_time: startTime,
+          match_minutes: Math.max(1, Math.min(30, Number(minutes) || 4)),
         },
       });
       notify('Ayarlar saxlanıldı.');
@@ -77,10 +81,16 @@ export default function TournamentSettings({ competition, config, hasBrackets, r
       </section>
 
       <section className="card">
-        <h2>Tatami və bürünc</h2>
+        <h2>Tatami, vaxt və bürünc</h2>
         <div className="form-grid">
           <Field label="Tatami sayı">
             <input type="number" min="1" max="12" value={mats} onChange={(e) => setMats(e.target.value)} />
+          </Field>
+          <Field label="Başlama saatı">
+            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
+          </Field>
+          <Field label="Bir görüşün müddəti (dəq)" hint="Qaydalara əsasən ara vaxtı daxil olmaqla orta müddət. Saatlar bu rəqəmə görə hesablanır.">
+            <input type="number" min="1" max="30" value={minutes} onChange={(e) => setMinutes(e.target.value)} />
           </Field>
           <Field label="Bürünc medal" hint="İki bürünc: yarımfinalda uduzanların hər ikisi bürünc alır.">
             <select value={bronze} onChange={(e) => setBronze(e.target.value)}>
