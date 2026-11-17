@@ -114,7 +114,7 @@ export default function BracketView({ bracket, onSave }) {
         </div>
         {repechage.length > 0 && (
           <div className="bk-bronze">
-            <div className="bk-head">Təsəllü və bürünc görüşləri</div>
+            <div className="bk-head">Təsəlliverici və bürünc görüşləri</div>
             <div className="bk-rep">
               {repechage.map((m) => (
                 <BracketCard key={m.id} bracket={bracket} match={m} number={numbers.get(m.id)} onPick={setPicked} active={picked === m.id} />

@@ -231,7 +231,7 @@ function repLocked(bracket, match) {
   if (match.bronze || match.round >= bracket.rounds) return;
   const side = halfOf(bracket, match) === 0 ? 'A' : 'B';
   if (repOf(side).some((m) => m.winner)) {
-    throw new Error('Təsəllü görüşlər başlayıb. Əvvəlcə onların nəticəsini silin.');
+    throw new Error('Təsəlliverici görüşlər başlayıb. Əvvəlcə onların nəticəsini silin.');
   }
 }
 
@@ -420,7 +420,7 @@ export function placements(bracket) {
 export function roundName(bracket, match) {
   if (bracket.system === 'round_robin') return 'Dövrə görüşü';
   if (match.bronze) return 'Bürünc görüşü';
-  if (match.rep) return 'Təsəllü görüş';
+  if (match.rep) return 'Təsəlliverici görüş';
   const left = bracket.rounds - match.round;
   if (left === 0) return 'Final';
   if (left === 1) return 'Yarımfinal';

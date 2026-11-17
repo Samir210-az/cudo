@@ -92,9 +92,9 @@ export default function TournamentSettings({ competition, config, hasBrackets, r
           <Field label="Bir görüşün müddəti (dəq)" hint="Qaydalara əsasən ara vaxtı daxil olmaqla orta müddət. Saatlar bu rəqəmə görə hesablanır.">
             <input type="number" min="1" max="30" value={minutes} onChange={(e) => setMinutes(e.target.value)} />
           </Field>
-          <Field label="Bürünc medal" hint="Təsəllü görüşlərdə finalçıya uduzanlar bürünc görüşlərinə düşür və 3, 3, 5, 5, 7, 7 yerlər müəyyən olunur. Dəyişiklik yalnız yeni püşkatmalara aid olur.">
+          <Field label="Bürünc medal" hint="Təsəlliverici görüşlərdə finalçıya uduzanlar bürünc görüşlərinə düşür və 3, 3, 5, 5, 7, 7 yerlər müəyyən olunur. Dəyişiklik yalnız yeni püşkatmalara aid olur.">
             <select value={bronze} onChange={(e) => setBronze(e.target.value)}>
-              <option value="repechage">Təsəllü görüşlər (iki bürünc görüşü)</option>
+              <option value="repechage">Təsəlliverici görüşlər (iki bürünc görüşü)</option>
               <option value="two">İki bürünc (yarımfinal uduzanlar)</option>
               <option value="match">Bir bürünc (ayrıca görüş)</option>
             </select>

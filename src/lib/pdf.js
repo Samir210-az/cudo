@@ -527,7 +527,7 @@ function bracketSheet(bracket, numbers) {
     const lineH = fs + 3;
     const bx = PAGE_W - EDGE - 250;
     const y0 = PAGE_H - 36 - (rep.length + 1) * lineH;
-    text(bx, y0, 'Təsəllü və bürünc görüşləri', { bold: true });
+    text(bx, y0, 'Təsəlliverici və bürünc görüşləri', { bold: true });
     rep.forEach((m, k) => {
       const a = nameOf(m.a);
       const b = nameOf(m.b);
