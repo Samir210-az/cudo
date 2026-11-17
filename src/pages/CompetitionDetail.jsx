@@ -5,6 +5,8 @@ import { Empty, ErrorBox, Field, Icon, Loader, Modal, PageHead, useToast } from 
 import { calcAge, fmtDate, fullName } from '../lib/format';
 import { useQuery } from '../lib/hooks';
 import { fetchSettings } from '../lib/settings';
+import Medal from '../components/Medal';
+import { medalMap } from '../lib/medals';
 import { STATUSES, athleteName } from '../lib/tournament';
 import { addMany, byName, eq, get, indexById, list, remove, removeWhere, update } from '../lib/db';
 
@@ -96,16 +98,17 @@ export default function CompetitionDetail() {
   const [exporting, setExporting] = useState(false);
 
   const { data, loading, error, reload } = useQuery(async () => {
-    const [competition, rawEntries, allKids, registered] = await Promise.all([
+    const [competition, rawEntries, allKids, registered, brackets] = await Promise.all([
       get('competitions', id),
       list('competitionEntries', eq('competition_id', id)),
       list('children'),
       list('tournamentAthletes', eq('competition_id', id)),
+      list('tournamentBrackets', eq('competition_id', id)),
     ]);
     const byId = indexById(allKids);
     const entries = rawEntries.filter((e) => byId.has(e.child_id)).map((e) => ({ ...e, children: byId.get(e.child_id) }));
     const kids = allKids.filter((k) => k.status === 'aktiv').sort(byName);
-    return { competition, entries, kids, registered };
+    return { competition, entries, kids, registered, medals: medalMap(brackets) };
   }, [id]);
 
   const groups = useMemo(() => {
@@ -125,7 +128,7 @@ export default function CompetitionDetail() {
 
   if (loading && !data) return <Loader />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  const { competition, entries, kids, registered } = data;
+  const { competition, entries, kids, registered, medals } = data;
 
   const patch = async (entry, field, value) => {
     const next = value.trim() || null;
@@ -206,7 +209,7 @@ export default function CompetitionDetail() {
             {[...registered].sort((a, b) => athleteName(a).localeCompare(athleteName(b), 'az')).map((a) => (
               <div className="row" key={a.id} style={{ flexWrap: 'wrap' }}>
                 <div className="row-main">
-                  <div className="row-title">{athleteName(a)}</div>
+                  <div className="row-title">{athleteName(a)}<Medal place={medals.get(a.id)} /></div>
                   <div className="row-sub">{[fmtDate(a.birth_date), a.weighed_kg ?? a.declared_kg ? `${a.weighed_kg ?? a.declared_kg} kq` : null, a.club_name].filter(Boolean).join(' · ')}</div>
                 </div>
                 <span className={`badge ${a.status === 'cekildi' ? 'ok' : a.status === 'kenar' ? 'bad' : ''}`}>{STATUSES[a.status]}</span>

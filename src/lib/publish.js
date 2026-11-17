@@ -30,6 +30,7 @@ function gamesOf(athleteId, brackets, schedule) {
         opponent: other ? other.name : UNKNOWN,
         opponent_club: other?.club || null,
         result: m.winner ? (m.winner === athleteId ? 'qalib' : 'məğlub') : null,
+        method: m.winner && m.method && m.method !== 'Bye' ? m.method : null,
       });
     }
   }

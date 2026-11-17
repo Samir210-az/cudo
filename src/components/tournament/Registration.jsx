@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Medal from '../Medal';
+import { medalMap } from '../../lib/medals';
 import { Empty, Field, Icon, Modal, useToast } from '../ui';
 import AthleteForm, { toPayload, validateAthlete } from './AthleteForm';
 import FixMissing from './FixMissing';
@@ -252,6 +254,7 @@ export default function Registration({ competition, config, athletes, brackets, 
       .sort((a, b) => athleteName(a).localeCompare(athleteName(b), 'az'));
   }, [athletes, q, age, status, config]);
 
+  const medals = useMemo(() => medalMap(brackets), [brackets]);
   const missing = useMemo(() => groupCategories(athletes, config).unassigned, [athletes, config]);
 
   const removeAthlete = async (a) => {
@@ -305,7 +308,7 @@ export default function Registration({ competition, config, athletes, brackets, 
               return (
                 <div className="t-ath" key={a.id}>
                   <div className="t-ath-main">
-                    <div className="t-ath-name">{athleteName(a)}</div>
+                    <div className="t-ath-name">{athleteName(a)}<Medal place={medals.get(a.id)} /></div>
                     <div className="t-ath-meta">
                       {[
                         a.birth_date ? fmtDate(a.birth_date) : null,

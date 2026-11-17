@@ -40,7 +40,7 @@ function Schedule({ schedule }) {
                 <div className="slot-line">
                   <span className="badge">{g.mat ? `Tatami ${g.mat}` : 'Tatami —'}</span>
                   <strong>{g.time || '—'}</strong>
-                  {g.result && <span className={`badge ${g.result === 'qalib' ? 'ok' : 'bad'}`}>{g.result}</span>}
+                  {g.result && <span className={`badge ${g.result === 'qalib' ? 'ok' : 'bad'}`}>{g.method ? `${g.result} · ${g.method}` : g.result}</span>}
                 </div>
                 <div className="row-sub">№{g.number} · {g.round}</div>
                 <div>{g.opponent}{g.opponent_club ? ` (${g.opponent_club})` : ''}</div>
