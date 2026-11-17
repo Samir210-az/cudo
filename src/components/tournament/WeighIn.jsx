@@ -5,7 +5,7 @@ import { athleteName, categoryOf, weightOf } from '../../lib/tournament';
 
 function Row({ a, config, drawn, reload }) {
   const notify = useToast();
-  const [value, setValue] = useState(a.weighed_kg ?? '');
+  const [value, setValue] = useState(a.weighed_kg ?? a.declared_kg ?? '');
   const [busy, setBusy] = useState(false);
 
   const kg = value === '' ? null : Number(String(value).replace(',', '.'));
@@ -37,7 +37,7 @@ function Row({ a, config, drawn, reload }) {
       <div className="row-main">
         <div className="row-title">{athleteName(a)}</div>
         <div className="row-sub">
-          {a.club_name} · elan: {a.declared_kg ?? '—'} kq
+          {a.club_name} · məşqçinin yazdığı: {a.declared_kg ?? '—'} kq
           {changed ? ` · yeni kateqoriya: ${after.cls || after.label}` : ''}
         </div>
         {kg !== null && !after.key && <div className="row-sub" style={{ color: 'var(--red)' }}>{after.problem}</div>}
@@ -55,7 +55,7 @@ function Row({ a, config, drawn, reload }) {
             inputMode="decimal"
             step="0.1"
             min="5"
-            placeholder="Çəki"
+            placeholder="Faktiki"
             aria-label={`${athleteName(a)} faktiki çəkisi`}
             value={value}
             onChange={(e) => setValue(e.target.value)}

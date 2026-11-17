@@ -124,7 +124,7 @@ export default function BranchLinks({ competition, config, athletes, brackets, o
   return (
     <Modal title="Filial linkləri" onClose={onClose}>
       <p className="muted" style={{ marginTop: 0 }}>
-        Hər filial və ya klub üçün ayrıca link yaradın, məşqçiyə göndərin. Məşqçinin əlavə etdiyi idmançılar qeydiyyat siyahısına avtomatik düşür.
+        Hər filial və ya klub üçün ayrıca link yaradın, məşqçiyə göndərin. Məşqçinin əlavə etdiyi idmançılar və yazdığı çəki qeydiyyat siyahısına avtomatik düşür, çəkiliş zamanı çəkini dəqiqləşdirə bilərsiniz.
       </p>
       <div className="toolbar">
         <input
@@ -138,19 +138,22 @@ export default function BranchLinks({ competition, config, athletes, brackets, o
         <button type="button" className="btn" disabled={busy} onClick={refresh}>İndi yenilə</button>
         <button type="button" className="btn primary" disabled={busy || !data?.length} onClick={publish}>Cədvəli dərc et</button>
       </div>
+      <p className="muted" style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>
+        "Cədvəli dərc et" bütün açıq linklərə birdən göndərir, filial seçmək lazım deyil. Hər məşqçi yalnız öz idmançılarını görür. İlk dərcdən sonra yenilənmə avtomatikdir.
+      </p>
 
       {loading && !data ? <Loader /> : error ? <ErrorBox error={error} onRetry={reload} /> : data.length ? (
         <div className="list" style={{ marginTop: 12 }}>
           {data.map((l) => (
             <div className="row" key={l.id} style={{ flexWrap: 'wrap' }}>
-              <div className="row-main">
+              <div className="row-main" style={{ flexBasis: '100%' }}>
                 <div className="row-title">{l.club_name}</div>
                 <div className="row-sub">
                   {l.entries.length} idmançı{pending(l) ? ` · ${pending(l)} yeni` : ''} · {l.active ? 'Açıqdır' : 'Bağlıdır'}
                 </div>
               </div>
               <button type="button" className="btn" onClick={() => copy(l)}>Linki kopyala</button>
-                            <button type="button" className="btn" onClick={() => toggle(l)}>{l.active ? 'Bağla' : 'Aç'}</button>
+              <button type="button" className="btn" onClick={() => toggle(l)}>{l.active ? 'Bağla' : 'Aç'}</button>
               <button type="button" className="icon-btn" onClick={() => del(l)} aria-label="Sil"><Icon name="trash" /></button>
             </div>
           ))}
