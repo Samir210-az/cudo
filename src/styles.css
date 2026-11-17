@@ -572,6 +572,6 @@ details.cat summary .row-title { flex: 1; min-width: 120px; }
 .coach-head h1 { margin: 0 0 4px; font-size: 1.35rem; }
 .coach-head p { margin: 0; color: var(--muted); }
 
-.coach-page, .coach-page.tdark { margin: 0; padding: 16px 16px 48px; overflow-x: hidden; }
-.coach-wrap { width: 100%; min-width: 0; }
+.coach-page { margin: 0; padding: 0 0 40px; overflow-x: hidden; }
+.coach-wrap { width: 100%; min-width: 0; display: grid; gap: 14px; }
 .coach-wrap input, .coach-wrap select { width: 100%; min-width: 0; max-width: 100%; }
