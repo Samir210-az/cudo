@@ -271,13 +271,18 @@ export default function Registration({ competition, config, athletes, brackets, 
   return (
     <>
       <div className="toolbar">
-        <button type="button" className="btn primary" onClick={() => setMode({ type: 'one' })}><Icon name="plus" /> Tək idmançı</button>
-        <button type="button" className="btn" onClick={() => setMode({ type: 'bulk' })}><Icon name="users" /> Kütləvi əlavə et</button>
-        <button type="button" className="btn" onClick={() => setMode({ type: 'own' })}><Icon name="trophy" /> Filialların uşaqlarından</button>
+        <button type="button" className="btn primary" onClick={() => setMode({ type: 'links' })}><Icon name="globe" /> Filial linkləri</button>
+        <button type="button" className="btn" onClick={() => setMode({ type: 'one' })}><Icon name="plus" /> İdmançı əlavə et</button>
         {missing.length > 0 && (
-          <button type="button" className="btn warn" onClick={() => setMode({ type: 'fix' })}>Çatışmayanı tamamla ({missing.length})</button>
+          <button type="button" className="btn warn" onClick={() => setMode({ type: 'fix' })}>Çatışan məlumat ({missing.length})</button>
         )}
-        <button type="button" className="btn" onClick={() => setMode({ type: 'links' })}><Icon name="globe" /> Filial linkləri</button>
+        <details className="more">
+          <summary className="btn">Digər yollar</summary>
+          <div className="more-list">
+            <button type="button" className="btn" onClick={() => setMode({ type: 'bulk' })}><Icon name="users" /> Siyahı ilə əlavə et</button>
+            <button type="button" className="btn" onClick={() => setMode({ type: 'own' })}><Icon name="trophy" /> Klubun öz uşaqlarından</button>
+          </div>
+        </details>
       </div>
 
       <div className="filters">

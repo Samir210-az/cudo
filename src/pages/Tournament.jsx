@@ -15,14 +15,24 @@ import { useQuery } from '../lib/hooks';
 import { readConfig } from '../lib/tournament';
 
 const TABS = [
-  ['qeydiyyat', 'Qeydiyyat'],
-  ['cekilis', 'Çəkiliş'],
-  ['kateqoriya', 'Kateqoriyalar'],
-  ['puskatma', 'Püşkatma'],
-  ['gorusler', 'Görüşlər'],
-  ['neticeler', 'Nəticələr'],
+  ['qeydiyyat', '1. Qeydiyyat'],
+  ['cekilis', '2. Çəkiliş'],
+  ['kateqoriya', '3. Kateqoriyalar'],
+  ['puskatma', '4. Püşkatma'],
+  ['gorusler', '5. Görüşlər'],
+  ['neticeler', '6. Nəticələr'],
   ['ayarlar', 'Ayarlar'],
 ];
+
+const HINTS = {
+  qeydiyyat: 'Məşqçilər öz linkləri ilə iştirakçıları özləri əlavə edir, siyahı avtomatik dolur. Sizin işiniz yalnız çatışan məlumatı tamamlamaqdır.',
+  cekilis: 'Yarış günü hər idmançının real çəkisini yazın. Çəkisi yazılan idmançı püşkatmaya düşür.',
+  kateqoriya: 'Kateqoriyalar yaşa, cinsə və çəkiyə görə avtomatik yaranır. Burada yalnız yoxlayırsınız.',
+  puskatma: 'Hər kateqoriya üçün püşkatma edin. Tatami və saat avtomatik bölünür.',
+  gorusler: 'Hər görüşün qalibini seçin. Dərc edilmiş cədvəl məşqçilərə avtomatik yenilənir.',
+  neticeler: 'Yerlər, klub medalları və rəsmi protokol PDF-i.',
+  ayarlar: 'Yaş qrupları, çəki cədvəli, tatami sayı, başlama saatı, bürünc qaydası.',
+};
 
 export default function Tournament() {
   const { id } = useParams();
@@ -63,6 +73,7 @@ export default function Tournament() {
           <button key={key} type="button" role="tab" className="tab" aria-selected={tab === key} onClick={() => choose(key)}>{label}</button>
         ))}
       </div>
+      <p className="step-hint">{HINTS[tab]}</p>
       {tab === 'qeydiyyat' && <Registration {...shared} />}
       {tab === 'cekilis' && <WeighIn {...shared} />}
       {tab === 'kateqoriya' && <Categories {...shared} />}

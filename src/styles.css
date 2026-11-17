@@ -25,7 +25,7 @@
 
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; min-height: 100%; }
-body { background: #eceff5; font-size: 16px; line-height: 1.5; }
+body { background: #0c1630; font-size: 16px; line-height: 1.5; }
 h1, h2, h3, p { margin: 0; }
 h1 { font-size: 1.6rem; line-height: 1.15; letter-spacing: -0.02em; font-weight: 800; }
 h2 { font-size: 1.1rem; }
@@ -498,55 +498,35 @@ details.cat summary .row-title { flex: 1; min-width: 120px; }
 .match-no { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: #232b3f; color: #fff; font-size: 0.78rem; font-weight: 700; }
 .side-digits { margin-top: 4px; font-weight: 800; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
 
-/* Turnir bölməsi: tünd görünüş */
-.tdark {
-  --bg: #0e121c; --card: #171c2b; --line: #28304a; --text: #e8ecf5; --muted: #8f99b0; --ink-2: #cfd6ea;
-  --shadow: none; --ok: #5fd48c; --red: #e0364d; --red-dark: #c3112b;
-  background: var(--bg); color: var(--text);
-  margin: -18px -16px -28px; padding: 18px 16px 96px; min-height: calc(100dvh - 130px);
-}
-.tdark h1, .tdark h2 { color: #fff; }
-.tdark .card { background: var(--card); border-color: var(--line); border-top-color: var(--accent, var(--red)); }
-.tdark .stat { background: var(--card); border-color: var(--line); border-left-color: var(--accent, #6d86ff); }
-.tdark .stat-value { color: #fff; }
-.tdark .btn { background: #1e2538; border-color: var(--line); color: var(--text); }
-.tdark .btn:hover { background: #262e45; }
+/* Turnir bölməsi */
+.tdark { padding-bottom: 40px; }
+.tdark .stat { border-left-color: var(--accent, #6d86ff); }
 .tdark .btn.primary { background: var(--red-dark); border-color: var(--red-dark); color: #fff; }
 .tdark .btn.primary:hover { background: #a60e24; }
 .tdark .btn.warn { background: #3a2a10; border-color: #6b4d18; color: #f2b45a; }
 .tdark .btn.danger { color: #ff8d9f; border-color: #5a2430; }
 .tdark .icon-btn { color: var(--muted); }
 .tdark .icon-btn:hover { background: rgba(255, 255, 255, 0.08); }
-.tdark input, .tdark select, .tdark textarea { background: #0f1422; border-color: #323b57; color: var(--text); color-scheme: dark; }
 .tdark input::placeholder { color: #6c7690; }
 .tdark .search svg { color: var(--muted); }
-.tdark .tabs { background: #0b0f18; border: 1px solid var(--line); }
 .tdark .tabs.wrap { display: flex; flex-wrap: wrap; width: 100%; }
 .tdark .tabs.wrap .tab { flex: 1 1 auto; text-align: center; padding: 9px 12px; }
 .tdark .tab { color: var(--muted); }
-.tdark .tab[aria-selected='true'] { background: #2a3350; color: #fff; box-shadow: none; }
-.tdark .badge { background: #262e45; color: #cfd6ea; }
-.tdark .badge.ok { background: #12351f; color: #5fd48c; }
-.tdark .badge.bad { background: #3a1620; color: #ff8d9f; }
-.tdark .badge.warn { background: #3a2a10; color: #f2b45a; }
-.tdark .notice { background: var(--card); border-color: var(--line); }
-.tdark .notice.error { background: #2a1520; border-color: #5a2430; }
 .tdark .row, .tdark details.cat, .tdark .match-line, .tdark .score-table .score-row { border-color: var(--line); }
 .tdark .row-sub, .tdark .muted, .tdark .back-link { color: var(--muted); }
-.tdark .modal { background: #171c2b; color: var(--text); }
 .tdark .modal-backdrop { background: rgba(3, 6, 12, 0.7); }
 .tdark .match-card { background: var(--card); border-color: var(--line); box-shadow: none; }
 .tdark .match-card.done { border-color: #1f5a3a; }
-.tdark .winner-btn { background: #10141f; border-color: #323b57; color: var(--text); }
+.tdark .winner-btn { background: #14213d; border-color: #3b4a69; color: var(--text); }
 .tdark .winner-btn.picked { background: #12351f; border-color: #2f8f58; }
 .tdark .winner-btn:hover:not([disabled]) { border-color: #6d86ff; }
 .tdark .score-col { border-color: var(--line); }
-.tdark .cnt-btn { background: #10141f; border-color: #323b57; color: var(--text); }
+.tdark .cnt-btn { background: #14213d; border-color: #3b4a69; color: var(--text); }
 .tdark .cnt-btn.plus { background: #12351f; border-color: #2f8f58; color: #5fd48c; }
-.tdark .match-box { background: #10141f; border-color: var(--line); }
+.tdark .match-box { background: #14213d; border-color: var(--line); }
 .tdark .side.win { background: #12351f; }
-.tdark .match-no { background: #2a3350; }
-.tdark .bk-dark { background: #0b0f18; border: 1px solid var(--line); }
+.tdark .match-no { background: #36466a; }
+.tdark .bk-dark { background: #0f1a33; border: 1px solid var(--line); }
 .tdark .check-line, .tdark .check { color: var(--text); }
 .tdark a { color: #8ba2ff; }
 
@@ -589,3 +569,72 @@ details.cat summary .row-title { flex: 1; min-width: 120px; }
 .medal.m3 { background: radial-gradient(circle at 35% 30%, #f0b27a, #a35d26); color: #3a1f08; }
 .bk-method { font-size: 0.62rem; color: #8d97ab; text-transform: uppercase; letter-spacing: 0.04em; }
 .bk-legend { margin: 10px 4px 0; color: #8d97ab; font-size: 0.78rem; }
+
+/* Tünd tema: admin panel və məşqçi səhifəsi */
+.app, .coach-page {
+  --bg: #101c36; --card: #1e2c49; --line: #3b4a69; --text: #f1f4fa; --muted: #a8b3c9;
+  --ok: #5fd48c; --red: #e0364d; --red-dark: #c3112b; --shadow: none;
+  --item: #2d3b59; --item-2: #36466a; --gold-text: #f2cf86;
+  color: var(--text);
+  background: linear-gradient(180deg, #152850 0%, #0f1b36 50%, #0b1530 100%) fixed;
+}
+:is(.app, .coach-page) h1 { color: #fff; }
+:is(.app, .coach-page) h2 { color: var(--gold-text); font-size: 0.92rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 800; }
+:is(.app, .coach-page) .card { border-radius: 20px; padding: 18px; }
+:is(.app, .coach-page) .stat { background: var(--item); border-color: var(--line); border-radius: 14px; }
+:is(.app, .coach-page) .stat-value { color: #fff; }
+:is(.app, .coach-page) .stat.ok .stat-value { color: var(--ok); }
+:is(.app, .coach-page) a.row:hover { background: rgba(255, 255, 255, 0.04); }
+:is(.app, .coach-page) a.row-title:hover { color: var(--gold-text); }
+:is(.app, .coach-page) .btn { background: var(--item); border-color: var(--line); color: var(--text); }
+:is(.app, .coach-page) .btn:hover { background: var(--item-2); }
+:is(.app, .coach-page) .btn.primary { background: var(--red-dark); border-color: var(--red-dark); color: #fff; }
+:is(.app, .coach-page) .btn.primary:hover { background: #a60e24; }
+:is(.app, .coach-page) .btn.warn { background: #3a2a10; border-color: #6b4d18; color: #f2b45a; }
+:is(.app, .coach-page) .btn.danger { color: #ff8d9f; border-color: #5a2430; }
+:is(.app, .coach-page) .btn.alert { background: #3a1620; }
+:is(.app, .coach-page) .icon-btn:hover { background: rgba(255, 255, 255, 0.08); }
+:is(.app, .coach-page) input, :is(.app, .coach-page) select, :is(.app, .coach-page) textarea { background: #14213d; border-color: var(--line); color: var(--text); color-scheme: dark; }
+:is(.app, .coach-page) input::placeholder { color: #7482a0; }
+:is(.app, .coach-page) .tabs { background: #0f1a33; border: 1px solid var(--line); }
+:is(.app, .coach-page) .tab[aria-selected='true'] { background: var(--item-2); color: #fff; box-shadow: none; }
+:is(.app, .coach-page) .badge { background: var(--item-2); color: #dbe3f3; }
+:is(.app, .coach-page) .badge.ok { background: #12351f; color: #5fd48c; }
+:is(.app, .coach-page) .badge.bad { background: #3a1620; color: #ff8d9f; }
+:is(.app, .coach-page) .badge.warn { background: #3a2a10; color: #f2b45a; }
+:is(.app, .coach-page) .notice { background: var(--item); border-color: var(--line); }
+:is(.app, .coach-page) .notice.error { background: #2a1520; border-color: #5a2430; }
+:is(.app, .coach-page) .modal { background: #1b2845; color: var(--text); }
+:is(.app, .coach-page) .modal-backdrop { background: rgba(4, 9, 20, 0.72); }
+:is(.app, .coach-page) .avatar { background: var(--item-2); color: #dbe3f3; }
+:is(.app, .coach-page) .avatar.t1 { background: #3a1620; color: #ff8d9f; }
+:is(.app, .coach-page) .avatar.t2 { background: #1b2f5a; color: #9db8ff; }
+:is(.app, .coach-page) .avatar.t3 { background: #12351f; color: #5fd48c; }
+:is(.app, .coach-page) .avatar.t4 { background: #3a2a10; color: #f2b45a; }
+:is(.app, .coach-page) .month-picker { background: var(--item); border-color: var(--line); }
+:is(.app, .coach-page) .frozen-bar { background: #3a1620; color: #ff8d9f; }
+:is(.app, .coach-page) .check-line, :is(.app, .coach-page) .check { color: var(--text); }
+.app .bottomnav { background: #0c1630; border-top-color: var(--line); }
+.app .nav-link:hover { background: rgba(255, 255, 255, 0.06); }
+.app .nav-link.active { color: var(--gold-text); }
+.app .bottomnav .nav-link.active { box-shadow: inset 0 3px 0 var(--gold-text); }
+.app .sidebar .nav-link.active { box-shadow: inset 3px 0 0 var(--gold-text); }
+.app .back-link { color: var(--muted); }
+.step-hint { margin: -4px 2px 14px; color: var(--muted); font-size: 0.9rem; }
+details.more { position: relative; }
+details.more summary { list-style: none; cursor: pointer; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more[open] .more-list { display: grid; gap: 8px; margin-top: 8px; }
+.more-list { display: none; }
+@media (min-width: 720px) {
+  details.more[open] .more-list { position: absolute; z-index: 10; min-width: 240px; padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: #1b2845; }
+}
+
+/* Siyahı sətirləri: klub saytındakı kimi kart içində rəngli sol zolaqlı bloklar */
+.app .card > .list { gap: 8px; }
+.app .card > .list > .row { background: var(--item); border: 0; border-left: 5px solid #c3112b; border-radius: 14px; padding: 12px 14px; }
+.app .card > .list > .row:nth-child(3n + 2) { border-left-color: var(--gold); }
+.app .card > .list > .row:nth-child(3n) { border-left-color: #5b8def; }
+.app .card > .list > .row.belted { border-left-color: var(--belt, #c3112b); }
+.app .row-sub, .app .muted { color: var(--muted); }
+.app .topbar { background: linear-gradient(180deg, #152850, #10203f); border-bottom-color: var(--line); }
