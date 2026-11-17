@@ -229,7 +229,7 @@ export default function Registration({ competition, config, athletes, brackets, 
   useEffect(() => {
     const sync = () => syncLinks(competition, latest.current)
       .then((r) => { if (r.created || r.updated) reload(); })
-      .catch(() => {});
+      .catch((err) => notify('Filial linklərindən yükləmə alınmadı: ' + (err.code || err.message), 'error'));
     sync();
     const onVisible = () => document.visibilityState === 'visible' && sync();
     document.addEventListener('visibilitychange', onVisible);
@@ -238,7 +238,7 @@ export default function Registration({ competition, config, athletes, brackets, 
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(timer);
     };
-  }, [competition, reload]);
+  }, [competition, reload, notify]);
 
   const clubs = useMemo(() => [...new Set(athletes.map((a) => a.club_name).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'az')), [athletes]);
   const drawnIds = useMemo(() => new Set(brackets.flatMap((b) => b.athletes.map((a) => a.id))), [brackets]);
