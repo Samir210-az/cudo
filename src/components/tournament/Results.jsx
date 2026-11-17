@@ -91,7 +91,7 @@ export default function Results({ competition, brackets, reload }) {
   return (
     <>
       <div className="toolbar">
-        <button type="button" className="btn" onClick={exportPdf} disabled={busy || !brackets.length}><Icon name="download" /> Nəticələr PDF</button>
+        <button type="button" className="btn" onClick={exportPdf} disabled={busy || !brackets.length}><Icon name="download" /> Protokol PDF</button>
       </div>
 
       {medals.length > 0 && (

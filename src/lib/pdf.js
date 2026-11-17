@@ -1,7 +1,9 @@
 import {
   calcAge, formatPhone, fmtDate, fmtNum, fmtPeriod, fullName, gradeLabel, todayISO, slugify as slug, trainingDuration,
 } from './format';
-import { firstRoundSlots, matchNumbers, placements } from './tournament';
+import {
+  firstRoundSlots, matchNumbers, placements, roundName, scoreDigits,
+} from './tournament';
 
 let engine;
 function loadEngine() {
@@ -589,9 +591,46 @@ export async function tournamentDrawPdf(competition, brackets) {
   await save(tournamentDrawDoc(competition, brackets), `puskatma-${slug(only)}.pdf`);
 }
 
-export async function tournamentResultsPdf(competition, brackets, medals, settings) {
+const signature = (title) => ({
+  stack: [
+    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 0.8, lineColor: '#16202e' }] },
+    { text: title, fontSize: 8.5, color: '#5b6879', margin: [0, 3, 0, 0] },
+  ],
+});
+
+function gameRows(bracket) {
+  const numbers = matchNumbers(bracket);
+  const name = (id) => bracket.athletes.find((x) => x.id === id)?.name || '—';
+  return bracket.matches
+    .filter((m) => !m.bye && m.a && m.b && m.winner)
+    .sort((x, y) => numbers.get(x.id) - numbers.get(y.id))
+    .map((m) => {
+      const aWon = m.winner === m.a;
+      const win = aWon ? m.score?.a : m.score?.b;
+      const lose = aWon ? m.score?.b : m.score?.a;
+      return [
+        String(numbers.get(m.id)),
+        roundName(bracket, m),
+        name(m.winner),
+        name(aWon ? m.b : m.a),
+        dash(m.method),
+        m.score ? `${scoreDigits(win)} : ${scoreDigits(lose)}` : '—',
+      ];
+    });
+}
+
+export function tournamentProtocolDoc(competition, brackets, medals, settings) {
   const content = [];
   const NAMES = { 1: 'Qızıl', 2: 'Gümüş', 3: 'Bürünc' };
+  const sorted = [...brackets].sort((a, b) => a.label.localeCompare(b.label, 'az', { numeric: true }));
+  const people = new Set(sorted.flatMap((b) => b.athletes.map((a) => a.id)));
+  const facts = [
+    competition.location ? `Yer: ${competition.location}` : null,
+    `İştirakçı: ${people.size}`,
+    `Kateqoriya: ${sorted.length}`,
+  ].filter(Boolean);
+  content.push({ text: facts.join('   ·   '), alignment: 'center', color: '#3b475a', margin: [0, 0, 0, 4] });
+
   if (medals.length) {
     content.push(section('Klub üzrə medallar', [0, 10, 0, 4]));
     content.push(
@@ -602,20 +641,33 @@ export async function tournamentResultsPdf(competition, brackets, medals, settin
       ),
     );
   }
-  [...brackets]
-    .sort((a, b) => a.label.localeCompare(b.label, 'az', { numeric: true }))
-    .forEach((b) => {
-      const r = placements(b);
-      if (!r.places.length) return;
-      content.push(section(b.label, [0, 10, 0, 4]));
-      content.push(
-        table(
-          [60, '*', 150],
-          ['Yer', 'İdmançı', 'Klub'],
-          r.places.map((p) => [NAMES[p.place] || `${p.place}-cü`, p.name, dash(p.club)]),
-        ),
-      );
-    });
-  if (!content.length) content.push({ text: 'Nəticə yoxdur.', color: '#6b7788' });
-  await save(buildDoc(`${competition.name} · nəticələr`, settings, content, { subtitle: fmtDate(competition.held_on) }), `turnir-netice-${slug(competition.name)}.pdf`);
+  sorted.forEach((b) => {
+    const r = placements(b);
+    if (!r.places.length) return;
+    content.push(section(b.label, [0, 12, 0, 4]));
+    content.push(
+      table(
+        [60, '*', 150],
+        ['Yer', 'İdmançı', 'Klub'],
+        r.places.map((p) => [NAMES[p.place] || `${p.place}-cü`, p.name, dash(p.club)]),
+      ),
+    );
+    const games = gameRows(b);
+    if (games.length) {
+      content.push({ text: 'Görüşlər (bal: İppon, Vaza-ari, Yuko)', fontSize: 8.5, color: '#5b6879', margin: [0, 8, 0, 3] });
+      content.push(table([22, 70, '*', '*', 62, 48], ['№', 'Mərhələ', 'Qalib', 'Məğlub', 'Üsul', 'Bal'], games));
+    }
+  });
+  if (content.length === 1) content.push({ text: 'Nəticə yoxdur.', color: '#6b7788', alignment: 'center' });
+  content.push({
+    columns: [signature('Baş hakim'), signature('Baş katib')],
+    columnGap: 60,
+    margin: [0, 46, 0, 0],
+    unbreakable: true,
+  });
+  return buildDoc(`${competition.name} · protokol`, settings, content, { subtitle: fmtDate(competition.held_on) });
+}
+
+export async function tournamentResultsPdf(competition, brackets, medals, settings) {
+  await save(tournamentProtocolDoc(competition, brackets, medals, settings), `protokol-${slug(competition.name)}.pdf`);
 }
