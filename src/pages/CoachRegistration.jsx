@@ -5,6 +5,7 @@ import { toPayload, validateAthlete } from '../components/tournament/AthleteForm
 import { calcAge, fmtDate, todayISO } from '../lib/format';
 import { deleteEntry, fetchLink, listEntries, saveEntry } from '../lib/links';
 
+const BRAND_LABEL = 'Hünər idman klubu';
 const blank = { last_name: '', first_name: '', father_name: '', birth_date: '', gender: '', declared_kg: '' };
 
 export default function CoachRegistration() {
@@ -87,16 +88,28 @@ export default function CoachRegistration() {
 
   if (error) {
     return (
-      <div className="tdark coach-page">
-        <div className="coach-wrap"><section className="card"><h1>Qeydiyyat açılmayıb</h1><p>{error}</p></section></div>
+      <div className="coach-page">
+      <header className="topbar">
+        <div className="brand">
+          <img className="brand-logo" src="/logo-128.webp" alt="" width="65" height="34" />
+          <span>{BRAND_LABEL}</span>
+        </div>
+      </header>
+        <main className="content coach-wrap"><section className="card"><h1>Qeydiyyat açılmayıb</h1><p>{error}</p></section></main>
       </div>
     );
   }
   if (!link) return <Loader />;
 
   return (
-    <div className="tdark coach-page">
-      <div className="coach-wrap">
+    <div className="coach-page">
+      <header className="topbar">
+        <div className="brand">
+          <img className="brand-logo" src="/logo-128.webp" alt="" width="65" height="34" />
+          <span>{BRAND_LABEL}</span>
+        </div>
+      </header>
+      <main className="content coach-wrap">
         <header className="coach-head">
           <h1>{link.competition_name}</h1>
           <p>{link.club_name} · iştirakçı qeydiyyatı</p>
@@ -153,7 +166,7 @@ export default function CoachRegistration() {
             </div>
           ) : <Empty>Hələ heç kim əlavə edilməyib.</Empty>}
         </section>
-      </div>
+      </main>
     </div>
   );
 }
