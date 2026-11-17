@@ -7,7 +7,8 @@ import Registration from '../components/tournament/Registration';
 import Results from '../components/tournament/Results';
 import TournamentSettings from '../components/tournament/TournamentSettings';
 import WeighIn from '../components/tournament/WeighIn';
-import { ErrorBox, Loader, PageHead } from '../components/ui';
+import { ErrorBox, Loader, PageHead, useToast } from '../components/ui';
+import { useAutoPublish } from '../lib/autoPublish';
 import { eq, get, list } from '../lib/db';
 import { fmtDate } from '../lib/format';
 import { useQuery } from '../lib/hooks';
@@ -37,6 +38,8 @@ export default function Tournament() {
   }, [id]);
 
   const config = useMemo(() => (data ? readConfig(data.competition) : null), [data]);
+  const notify = useToast();
+  useAutoPublish(data, config, (err) => notify(`Dərc edilmiş cədvəl yenilənmədi: ${err.message}`, 'error'));
 
   if (loading && !data) return <Loader />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;

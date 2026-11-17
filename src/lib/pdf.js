@@ -2,7 +2,7 @@ import {
   calcAge, formatPhone, fmtDate, fmtNum, fmtPeriod, fullName, gradeLabel, todayISO, slugify as slug, trainingDuration,
 } from './format';
 import {
-  firstRoundSlots, matchNumbers, placements, roundName, scoreDigits,
+  firstRoundSlots, isMain, placeLabel, matchNumbers, orderedMatches, placements, roundName, scoreDigits,
 } from './tournament';
 
 let engine;
@@ -483,7 +483,7 @@ function bracketSheet(bracket, numbers) {
     columns: [{ width: 40, text: t, alignment: 'right', fontSize: fs, ...o }], absolutePosition: { x: xr - 40, y },
   });
 
-  const byRound = (r) => bracket.matches.filter((m) => m.round === r && !m.bronze).sort((x, y) => x.idx - y.idx);
+  const byRound = (r) => bracket.matches.filter((m) => m.round === r && isMain(m)).sort((x, y) => x.idx - y.idx);
 
   byRound(1).forEach((m) => {
     const y0 = top + m.idx * 2 * slotH;
@@ -518,9 +518,23 @@ function bracketSheet(bracket, numbers) {
   }
   text(xj(R + 1) - fs * 1.8, cy(R, 0) + 2, '1.', { bold: true });
 
-  const bronze = bracket.matches.find((m) => m.bronze);
+  const bronze = bracket.matches.find((m) => m.bronze && !m.rep);
   const done = placements(bracket);
   const foot = [];
+  const rep = orderedMatches(bracket).filter((m) => m.rep);
+  if (rep.length) {
+    const lineH = fs + 3;
+    const bx = PAGE_W - EDGE - 250;
+    const y0 = PAGE_H - 36 - (rep.length + 1) * lineH;
+    text(bx, y0, 'Təsəllü və bürünc görüşləri', { bold: true });
+    rep.forEach((m, k) => {
+      const a = nameOf(m.a);
+      const b = nameOf(m.b);
+      const win = nameOf(m.winner);
+      const row = `${numbers.get(m.id)}.  ${a ? shortName(a.name) : '—'}  —  ${b ? shortName(b.name) : '—'}${win ? `   (${shortName(win.name)})` : ''}`;
+      text(bx, y0 + (k + 1) * lineH, fit(row, 250, fs));
+    });
+  }
   if (bronze) {
     const yb = PAGE_H - 62;
     const bx = PAGE_W - EDGE - 250;
@@ -649,7 +663,7 @@ export function tournamentProtocolDoc(competition, brackets, medals, settings) {
       table(
         [60, '*', 150],
         ['Yer', 'İdmançı', 'Klub'],
-        r.places.map((p) => [NAMES[p.place] || `${p.place}-cü`, p.name, dash(p.club)]),
+        r.places.map((p) => [NAMES[p.place] || placeLabel(p.place), p.name, dash(p.club)]),
       ),
     );
     const games = gameRows(b);

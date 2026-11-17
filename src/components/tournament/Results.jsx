@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Empty, Icon, useToast } from '../ui';
 import { put } from '../../lib/db';
 import {
-  bracketId, medalTable, placements, roundName, scoreLine, scoreTotals,
+  bracketId, medalTable, placeLabel, placements, roundName, scoreLine, scoreTotals,
 } from '../../lib/tournament';
 
 const MEDAL = { 1: 'Qızıl', 2: 'Gümüş', 3: 'Bürünc' };
@@ -125,7 +125,7 @@ export default function Results({ competition, brackets, reload }) {
                   <div className="list">
                     {r.places.map((p) => (
                       <div className="row" key={`${p.place}-${p.id}`}>
-                        <span className={`badge ${TONE[p.place] || ''}`}>{p.place <= 3 ? MEDAL[p.place] : `${p.place}-cü yer`}</span>
+                        <span className={`badge ${TONE[p.place] || ''}`}>{p.place <= 3 ? MEDAL[p.place] : `${placeLabel(p.place)} yer`}</span>
                         <span className="row-main">
                           <span className="row-title">{p.name}</span>
                           <span className="row-sub" style={{ display: 'block' }}>{p.club}</span>

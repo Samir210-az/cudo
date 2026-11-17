@@ -492,6 +492,7 @@ details.cat summary .row-title { flex: 1; min-width: 120px; }
 .bk-side.lose .bk-name, .bk-side.lose .bk-digits { color: #7c869b; }
 .bk-side.lose .bk-name b { font-weight: 600; }
 .bk-bronze { margin-top: 16px; max-width: 236px; }
+.bk-rep { display: grid; gap: 8px; }
 .bk-rr { display: grid; gap: 10px; padding-left: 26px; }
 .bk-detail { margin-top: 14px; display: grid; gap: 8px; }
 .match-no { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: #232b3f; color: #fff; font-size: 0.78rem; font-weight: 700; }
