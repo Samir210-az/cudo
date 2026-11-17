@@ -8,6 +8,40 @@ import {
 
 const PERSONAL = ['last_name', 'first_name', 'father_name', 'birth_date', 'gender', 'declared_kg'];
 
+let running = null;
+const createdRefs = new Set();
+
+export function syncLinks(competition, athletes) {
+  if (running) return running;
+  const known = new Map(athletes.filter((a) => a.link_ref).map((a) => [a.link_ref, a]));
+  running = (async () => {
+    const stats = { created: 0, updated: 0 };
+    const links = await listLinks(competition.id);
+    for (const l of links) {
+      const entries = await listEntries(l.id);
+      for (const e of entries) {
+        const ref = `${l.id}_${e.id}`;
+        const fields = Object.fromEntries(PERSONAL.map((k) => [k, e[k] ?? null]));
+        const existing = known.get(ref);
+        if (!existing) {
+          if (createdRefs.has(ref)) continue;
+          createdRefs.add(ref);
+          await add('tournamentAthletes', {
+            ...fields, group_type: 'esas', club_name: l.club_name, coach: null, link_ref: ref,
+            competition_id: competition.id, status: 'qeydiyyat', created_at: new Date().toISOString(),
+          });
+          stats.created += 1;
+        } else if (PERSONAL.some((k) => (existing[k] ?? null) !== fields[k])) {
+          await update('tournamentAthletes', existing.id, fields);
+          stats.updated += 1;
+        }
+      }
+    }
+    return stats;
+  })().finally(() => { running = null; });
+  return running;
+}
+
 export default function BranchLinks({ competition, athletes, onClose, onSaved }) {
   const notify = useToast();
   const [club, setClub] = useState('');
@@ -59,37 +93,15 @@ export default function BranchLinks({ competition, athletes, onClose, onSaved })
     }
   };
 
-  const load = async (l) => {
+  const refresh = async () => {
     setBusy(true);
     try {
-      let created = 0;
-      let updated = 0;
-      for (const e of l.entries) {
-        const ref = `${l.id}_${e.id}`;
-        const fields = Object.fromEntries(PERSONAL.map((k) => [k, e[k] ?? null]));
-        const existing = known.get(ref);
-        if (existing) {
-          await update('tournamentAthletes', existing.id, fields);
-          updated += 1;
-        } else {
-          await add('tournamentAthletes', {
-            ...fields,
-            group_type: 'esas',
-            club_name: l.club_name,
-            coach: null,
-            link_ref: ref,
-            competition_id: competition.id,
-            status: 'qeydiyyat',
-            created_at: new Date().toISOString(),
-          });
-          created += 1;
-        }
-      }
-      notify(`${l.club_name}: ${created} yeni, ${updated} yenilənən.`);
+      const r = await syncLinks(competition, athletes);
+      notify(`${r.created} yeni idmançı əlavə edildi, ${r.updated} yeniləndi.`);
       onSaved();
       reload();
     } catch (err) {
-      notify('Yüklənmədi: ' + err.message, 'error');
+      notify('Yenilənmədi: ' + err.message, 'error');
     } finally {
       setBusy(false);
     }
@@ -98,7 +110,7 @@ export default function BranchLinks({ competition, athletes, onClose, onSaved })
   return (
     <Modal title="Filial linkləri" onClose={onClose}>
       <p className="muted" style={{ marginTop: 0 }}>
-        Hər filial və ya klub üçün ayrıca link yaradın, məşqçiyə göndərin. O, qeydiyyat və parol olmadan öz idmançılarını əlavə edir.
+        Hər filial və ya klub üçün ayrıca link yaradın, məşqçiyə göndərin. Məşqçinin əlavə etdiyi idmançılar qeydiyyat siyahısına avtomatik düşür.
       </p>
       <div className="toolbar">
         <input
@@ -109,6 +121,7 @@ export default function BranchLinks({ competition, athletes, onClose, onSaved })
           aria-label="Filialın adı"
         />
         <button type="button" className="btn primary" disabled={busy} onClick={create}><Icon name="plus" /> Link yarat</button>
+        <button type="button" className="btn" disabled={busy} onClick={refresh}>İndi yenilə</button>
       </div>
 
       {loading && !data ? <Loader /> : error ? <ErrorBox error={error} onRetry={reload} /> : data.length ? (
@@ -122,8 +135,7 @@ export default function BranchLinks({ competition, athletes, onClose, onSaved })
                 </div>
               </div>
               <button type="button" className="btn" onClick={() => copy(l)}>Linki kopyala</button>
-              <button type="button" className="btn primary" disabled={busy || !l.entries.length} onClick={() => load(l)}>Siyahıya yüklə</button>
-              <button type="button" className="btn" onClick={() => toggle(l)}>{l.active ? 'Bağla' : 'Aç'}</button>
+                            <button type="button" className="btn" onClick={() => toggle(l)}>{l.active ? 'Bağla' : 'Aç'}</button>
               <button type="button" className="icon-btn" onClick={() => del(l)} aria-label="Sil"><Icon name="trash" /></button>
             </div>
           ))}

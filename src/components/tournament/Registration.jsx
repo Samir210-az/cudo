@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Empty, Field, Icon, Modal, useToast } from '../ui';
 import AthleteForm, { toPayload, validateAthlete } from './AthleteForm';
 import FixMissing from './FixMissing';
-import BranchLinks from './BranchLinks';
+import BranchLinks, { syncLinks } from './BranchLinks';
 import { addMany, listClubs, listFor, remove } from '../../lib/db';
 import { useQuery } from '../../lib/hooks';
 import { calcAge, fmtDate, fullName, todayISO } from '../../lib/format';
@@ -223,6 +223,22 @@ export default function Registration({ competition, config, athletes, brackets, 
   const [q, setQ] = useState('');
   const [age, setAge] = useState('');
   const [status, setStatus] = useState('');
+  const latest = useRef(athletes);
+  latest.current = athletes;
+
+  useEffect(() => {
+    const sync = () => syncLinks(competition, latest.current)
+      .then((r) => { if (r.created || r.updated) reload(); })
+      .catch(() => {});
+    sync();
+    const onVisible = () => document.visibilityState === 'visible' && sync();
+    document.addEventListener('visibilitychange', onVisible);
+    const timer = setInterval(sync, 30000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(timer);
+    };
+  }, [competition, reload]);
 
   const clubs = useMemo(() => [...new Set(athletes.map((a) => a.club_name).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'az')), [athletes]);
   const drawnIds = useMemo(() => new Set(brackets.flatMap((b) => b.athletes.map((a) => a.id))), [brackets]);
