@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Empty, Field, Icon, Modal, useToast } from '../ui';
 import AthleteForm, { toPayload, validateAthlete } from './AthleteForm';
-import { addMany, remove } from '../../lib/db';
+import { addMany, listClubs, listFor, remove } from '../../lib/db';
+import { useQuery } from '../../lib/hooks';
 import { calcAge, fmtDate, fullName, todayISO } from '../../lib/format';
 import { BRAND } from '../../lib/settings';
 import { GENDERS, STATUSES, TYPES, athleteName, categoryOf } from '../../lib/tournament';
@@ -91,16 +92,31 @@ function BulkAdd({ competitionId, clubs, onClose, onSaved }) {
   );
 }
 
-function ImportOwn({ competitionId, kids, taken, onClose, onSaved }) {
+function ImportOwn({ competitionId, taken, onClose, onSaved }) {
   const notify = useToast();
   const [q, setQ] = useState('');
+  const [branch, setBranch] = useState('');
   const [picked, setPicked] = useState(new Set());
   const [meta, setMeta] = useState({ club_name: BRAND, coach: '', group_type: 'esas' });
   const [busy, setBusy] = useState(false);
 
-  const available = kids.filter((k) => !taken.has(k.id) && k.status === 'aktiv');
-  const needle = q.trim().toLocaleLowerCase('az');
-  const shown = needle ? available.filter((k) => fullName(k).toLocaleLowerCase('az').includes(needle)) : available;
+  const { data, loading, error } = useQuery(async () => {
+    const clubs = await listClubs();
+    const groups = await Promise.all(
+      clubs.map(async (c) => (await listFor(c.id, 'children')).map((k) => ({ ...k, branch_id: c.id, branch_name: c.club_name }))),
+    );
+    return { clubs, kids: groups.flat().filter((k) => k.status === 'aktiv') };
+  }, []);
+
+  const shown = useMemo(() => {
+    const needle = q.trim().toLocaleLowerCase('az');
+    return (data?.kids || [])
+      .filter((k) => !taken.has(k.id))
+      .filter((k) => !branch || k.branch_id === branch)
+      .filter((k) => !needle || fullName(k).toLocaleLowerCase('az').includes(needle))
+      .sort((x, y) => fullName(x).localeCompare(fullName(y), 'az'));
+  }, [data, q, branch, taken]);
+
   const toggle = (id) =>
     setPicked((prev) => {
       const next = new Set(prev);
@@ -109,12 +125,15 @@ function ImportOwn({ competitionId, kids, taken, onClose, onSaved }) {
       return next;
     });
 
+  const pickAll = () => setPicked((prev) => new Set([...prev, ...shown.map((k) => k.id)]));
+
   const save = async () => {
     if (!picked.size) return notify('Ən azı bir uşaq seçin.', 'error');
     if (!meta.club_name.trim()) return notify('Klubu yazın.', 'error');
-    const rows = available.filter((k) => picked.has(k.id)).map((k) => ({
+    const rows = data.kids.filter((k) => picked.has(k.id)).map((k) => ({
       competition_id: competitionId,
       child_id: k.id,
+      branch_id: k.branch_id,
       last_name: k.last_name,
       first_name: k.first_name,
       father_name: k.father_name || null,
@@ -142,34 +161,50 @@ function ImportOwn({ competitionId, kids, taken, onClose, onSaved }) {
   };
 
   return (
-    <Modal title="Klubun uşaqlarından əlavə et" onClose={onClose}>
-      <div className="search" style={{ marginBottom: 10 }}>
-        <Icon name="search" size={18} />
-        <input type="search" placeholder="Ad üzrə axtar" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Axtarış" />
-      </div>
-      <div className="list" style={{ maxHeight: '36dvh', overflowY: 'auto' }}>
-        {shown.length ? shown.map((k) => (
-          <label className="row check" key={k.id}>
-            <input type="checkbox" checked={picked.has(k.id)} onChange={() => toggle(k.id)} />
-            <span className="row-main">
-              <span className="row-title">{fullName(k)}</span>
-              <span className="row-sub" style={{ display: 'block' }}>
-                {calcAge(k.birth_date)} yaş{k.weight_kg ? ` · ${k.weight_kg} kq` : ''}{k.gender ? ` · ${k.gender}` : ''}
-              </span>
-            </span>
-          </label>
-        )) : <Empty>{available.length ? 'Tapılmadı.' : 'Əlavə ediləcək uşaq qalmayıb.'}</Empty>}
-      </div>
-      <div className="form-grid" style={{ marginTop: 12 }}>
-        <Field label="Klubun adı"><input value={meta.club_name} onChange={(e) => setMeta({ ...meta, club_name: e.target.value })} /></Field>
-        <Field label="Məşqçi"><input value={meta.coach} onChange={(e) => setMeta({ ...meta, coach: e.target.value })} /></Field>
-        <Field label="Qrup">
-          <select value={meta.group_type} onChange={(e) => setMeta({ ...meta, group_type: e.target.value })}>
-            <option value="esas">Əsas</option>
-            <option value="teze">TƏZƏ</option>
-          </select>
-        </Field>
-      </div>
+    <Modal title="Filialların uşaqlarından əlavə et" onClose={onClose}>
+      {loading && <p className="row-sub">Filialların siyahısı yüklənir…</p>}
+      {error && <p className="notice error">Yüklənmədi: {error.message}</p>}
+      {data && (
+        <>
+          <div className="filters">
+            <select value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Filial">
+              <option value="">Bütün filiallar</option>
+              {data.clubs.map((c) => <option key={c.id} value={c.id}>{c.club_name}</option>)}
+            </select>
+            <div className="search">
+              <Icon name="search" size={18} />
+              <input type="search" placeholder="Ad üzrə axtar" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Axtarış" />
+            </div>
+          </div>
+          <div className="toolbar">
+            <button type="button" className="btn sm" onClick={pickAll} disabled={!shown.length}>Göstərilənlərin hamısını seç ({shown.length})</button>
+            {picked.size > 0 && <button type="button" className="btn sm" onClick={() => setPicked(new Set())}>Seçimi təmizlə</button>}
+          </div>
+          <div className="list" style={{ maxHeight: '34dvh', overflowY: 'auto' }}>
+            {shown.length ? shown.map((k) => (
+              <label className="row check" key={k.id}>
+                <input type="checkbox" checked={picked.has(k.id)} onChange={() => toggle(k.id)} />
+                <span className="row-main">
+                  <span className="row-title">{fullName(k)}</span>
+                  <span className="row-sub" style={{ display: 'block' }}>
+                    {k.branch_name} · {calcAge(k.birth_date)} yaş{k.weight_kg ? ` · ${k.weight_kg} kq` : ''}{k.gender ? ` · ${k.gender}` : ''}
+                  </span>
+                </span>
+              </label>
+            )) : <Empty>Əlavə ediləcək uşaq tapılmadı.</Empty>}
+          </div>
+          <div className="form-grid" style={{ marginTop: 12 }}>
+            <Field label="Klubun adı"><input value={meta.club_name} onChange={(e) => setMeta({ ...meta, club_name: e.target.value })} /></Field>
+            <Field label="Məşqçi"><input value={meta.coach} onChange={(e) => setMeta({ ...meta, coach: e.target.value })} /></Field>
+            <Field label="Qrup">
+              <select value={meta.group_type} onChange={(e) => setMeta({ ...meta, group_type: e.target.value })}>
+                <option value="esas">Əsas</option>
+                <option value="teze">TƏZƏ</option>
+              </select>
+            </Field>
+          </div>
+        </>
+      )}
       <div className="form-actions">
         <button type="button" className="btn primary" onClick={save} disabled={busy || !picked.size}>
           {busy ? 'Əlavə edilir…' : `Əlavə et (${picked.size})`}
@@ -180,7 +215,7 @@ function ImportOwn({ competitionId, kids, taken, onClose, onSaved }) {
   );
 }
 
-export default function Registration({ competition, config, athletes, brackets, kids, reload }) {
+export default function Registration({ competition, config, athletes, brackets, reload }) {
   const notify = useToast();
   const [mode, setMode] = useState(null);
   const [q, setQ] = useState('');
@@ -215,7 +250,7 @@ export default function Registration({ competition, config, athletes, brackets, 
       <div className="toolbar">
         <button type="button" className="btn primary" onClick={() => setMode({ type: 'one' })}><Icon name="plus" /> Tək idmançı</button>
         <button type="button" className="btn" onClick={() => setMode({ type: 'bulk' })}><Icon name="users" /> Kütləvi əlavə et</button>
-        <button type="button" className="btn" onClick={() => setMode({ type: 'own' })}><Icon name="trophy" /> Klubun uşaqlarından</button>
+        <button type="button" className="btn" onClick={() => setMode({ type: 'own' })}><Icon name="trophy" /> Filialların uşaqlarından</button>
       </div>
 
       <div className="filters">
@@ -268,7 +303,7 @@ export default function Registration({ competition, config, athletes, brackets, 
       )}
       {mode?.type === 'bulk' && <BulkAdd competitionId={competition.id} clubs={clubs} onClose={() => setMode(null)} onSaved={reload} />}
       {mode?.type === 'own' && (
-        <ImportOwn competitionId={competition.id} kids={kids} taken={new Set(athletes.map((a) => a.child_id).filter(Boolean))} onClose={() => setMode(null)} onSaved={reload} />
+        <ImportOwn competitionId={competition.id} taken={new Set(athletes.map((a) => a.child_id).filter(Boolean))} onClose={() => setMode(null)} onSaved={reload} />
       )}
     </>
   );

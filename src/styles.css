@@ -444,3 +444,18 @@ details.cat summary .row-title { flex: 1; min-width: 120px; }
   .bulk-row input[type='date'] { grid-column: auto; }
   .match-sides { grid-template-columns: 1fr auto 1fr; }
 }
+
+.score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.score-col { border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.score-name { font-weight: 700; font-size: 0.88rem; margin-bottom: 6px; overflow-wrap: anywhere; }
+.counter { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 6px; padding: 3px 0; }
+.counter-label { font-size: 0.82rem; color: var(--muted); }
+.cnt-btn { width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: 1.25rem; font-weight: 700; line-height: 1; }
+.cnt-btn.plus { background: #e5f6ec; border-color: #bfe3cd; color: var(--ok); }
+.cnt-btn[disabled] { opacity: 0.4; }
+.cnt-val { min-width: 22px; text-align: center; font-size: 1.1rem; }
+.score-table .score-row { display: grid; grid-template-columns: 1fr repeat(5, 38px); gap: 4px; padding: 5px 0; border-top: 1px solid var(--line); font-size: 0.88rem; }
+.score-table .score-row.head { font-weight: 700; color: var(--muted); border-top: 0; }
+.score-table .score-row span + span { text-align: center; }
+.match-line { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 0.9rem; }
+.match-line small { color: var(--muted); margin-left: 6px; }

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Empty, Icon, useToast } from '../ui';
 import { put } from '../../lib/db';
-import { bracketId, medalTable, placements } from '../../lib/tournament';
+import {
+  bracketId, medalTable, placements, roundName, scoreLine, scoreTotals,
+} from '../../lib/tournament';
 
 const MEDAL = { 1: 'Qızıl', 2: 'Gümüş', 3: 'Bürünc' };
 const TONE = { 1: 'warn', 2: '', 3: 'bad' };
@@ -24,6 +26,37 @@ function TiePicker({ bracket, onSave }) {
       ))}
       <button type="button" className="btn primary" style={{ marginTop: 10 }} disabled={!full} onClick={() => onSave({ ...bracket, manual_places: picks })}>Yerləri təsdiq et</button>
     </div>
+  );
+}
+
+function ScoreTable({ bracket }) {
+  const name = (id) => bracket.athletes.find((a) => a.id === id)?.name || '—';
+  const played = bracket.matches.filter((m) => !m.bye && m.a && m.b && (m.winner || m.score));
+  if (!played.length) return null;
+  const totals = scoreTotals(bracket);
+  return (
+    <details className="cat">
+      <summary><span className="row-title">Bal cədvəli</span><span className="badge">{played.length} görüş</span></summary>
+      <div className="cat-body">
+        <div className="score-table">
+          <div className="score-row head"><span>İdmançı</span><span>Qal.</span><span>İp.</span><span>Va.</span><span>Yu.</span><span>Şi.</span></div>
+          {totals.map((t) => (
+            <div className="score-row" key={t.id}>
+              <span>{t.name}</span><span>{t.wins}</span><span>{t.ippon}</span><span>{t.wazari}</span><span>{t.yuko}</span><span>{t.shido}</span>
+            </div>
+          ))}
+        </div>
+        <p className="row-sub" style={{ margin: '10px 0 4px' }}>Görüşlər (V vaza-ari, Y yuko, Ş şido)</p>
+        {played.map((m) => (
+          <div className="match-line" key={m.id}>
+            <span className="badge">{roundName(bracket, m)}</span>
+            <span>{name(m.a)} <small>{scoreLine(m.score?.a)}</small></span>
+            <span>{name(m.b)} <small>{scoreLine(m.score?.b)}</small></span>
+            <span className="row-sub">{m.winner ? `Qalib: ${name(m.winner)}${m.method ? ` (${m.method})` : ''}` : 'Davam edir'}</span>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -101,6 +134,7 @@ export default function Results({ competition, brackets, reload }) {
                     ))}
                   </div>
                 )}
+                <ScoreTable bracket={b} />
                 {!r.complete && !r.tie && <p className="row-sub">Görüşlər bitəndən sonra yerlər burada görünəcək.</p>}
               </section>
             );

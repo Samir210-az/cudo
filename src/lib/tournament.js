@@ -1,7 +1,7 @@
 export const GENDERS = { oğlan: 'Oğlan', qız: 'Qız' };
 export const TYPES = { esas: 'Əsas', teze: 'TƏZƏ' };
 export const STATUSES = { qeydiyyat: 'Qeydiyyatda', cekildi: 'Çəkilib', kenar: 'Kənar' };
-export const METHODS = ['İppon', 'Vaza-ari', 'Yuko', 'Qərar', 'Çəkilmə', 'Diskvalifikasiya'];
+export const METHODS = ['İppon', 'Vaza-ari', 'Yuko', 'Qərar', 'Hansoku-make', 'Çəkilmə', 'Diskvalifikasiya'];
 
 const norm = (s) => (s || '').trim().toLocaleLowerCase('az');
 
@@ -347,4 +347,50 @@ export function medalTable(brackets) {
     }
   }
   return [...clubs.values()].sort((a, b) => b.gold - a.gold || b.silver - a.silver || b.bronze - a.bronze);
+}
+
+export const emptySide = () => ({ ippon: 0, wazari: 0, yuko: 0, shido: 0 });
+export const emptyScore = () => ({ a: emptySide(), b: emptySide() });
+
+export const SCORE_LIMITS = { ippon: 1, wazari: 2, yuko: 9, shido: 3 };
+
+export function decideFromScore(score) {
+  const { a, b } = score || emptyScore();
+  if (a.ippon && b.ippon) return { winner: null };
+  if (a.ippon !== b.ippon) return { winner: a.ippon ? 'a' : 'b', method: 'İppon', final: true };
+  if ((a.wazari >= 2) !== (b.wazari >= 2)) return { winner: a.wazari >= 2 ? 'a' : 'b', method: 'İppon', final: true };
+  if ((a.shido >= 3) !== (b.shido >= 3)) return { winner: a.shido >= 3 ? 'b' : 'a', method: 'Hansoku-make', final: true };
+  if (a.wazari !== b.wazari) return { winner: a.wazari > b.wazari ? 'a' : 'b', method: 'Vaza-ari', final: false };
+  if (a.yuko !== b.yuko) return { winner: a.yuko > b.yuko ? 'a' : 'b', method: 'Yuko', final: false };
+  return { winner: null };
+}
+
+export function setScore(source, matchId, score) {
+  const bracket = structuredClone(source);
+  const match = matchById(bracket, matchId);
+  if (!match || !match.a || !match.b) throw new Error('Bu görüşün iştirakçıları hələ bəlli deyil.');
+  if (match.winner) throw new Error('Nəticə təyin olunub. Balı dəyişmək üçün əvvəlcə nəticəni silin.');
+  match.score = score;
+  return bracket;
+}
+
+export const scoreLine = (side) => {
+  if (!side) return '—';
+  return [side.ippon ? 'İppon' : null, `V${side.wazari}`, `Y${side.yuko}`, `Ş${side.shido}`].filter(Boolean).join(' ');
+};
+
+export function scoreTotals(bracket) {
+  const rows = new Map(bracket.athletes.map((a) => [a.id, { id: a.id, name: a.name, club: a.club, wins: 0, ippon: 0, wazari: 0, yuko: 0, shido: 0 }]));
+  for (const m of bracket.matches) {
+    if (m.bye || !m.a || !m.b) continue;
+    if (m.winner) rows.get(m.winner).wins += 1;
+    if (!m.score) continue;
+    [['a', m.a], ['b', m.b]].forEach(([side, id]) => {
+      const row = rows.get(id);
+      Object.keys(SCORE_LIMITS).forEach((k) => {
+        row[k] += m.score[side][k] || 0;
+      });
+    });
+  }
+  return [...rows.values()].sort((x, y) => y.wins - x.wins || y.ippon - x.ippon || y.wazari - x.wazari || y.yuko - x.yuko);
 }
