@@ -1,7 +1,7 @@
 import { Modal } from './ui';
 
 const WARNING =
-  'Yarış gedərkən admin paneldə "Turnir idarəetməsi" səhifəsi (Yarışlar → yarışı açın → Turnir idarəetməsi, "5. Görüşlər" bölməsi) açıq qalmalıdır. Məşqçilərin gördüyü cədvəlin avtomatik yenilənməsi məhz bu səhifədən gedir. Telefon söndükdə və ya səhifə bağlandıqda yenilənmə dayanır. Yarış günü həmin səhifəni ayrıca bir noutbukda və ya sabit telefonda açıq saxlayın.';
+  'Yarış gedərkən admin paneldə "Turnir idarəetməsi" səhifəsi (Yarışlar → yarışı açın → Turnir idarəetməsi, "5. Görüşlər" bölməsi) açıq qalmalıdır. Məşqçilərin gördüyü cədvəlin avtomatik yenilənməsi məhz bu səhifədən gedir. Telefon söndükdə və ya səhifə bağlandıqda yenilənmə gecikir, səhifə yenidən açılanda tamamlanır. Hər dəfə yeni nəticə yazdıqdan sonra "Filial linkləri" pəncərəsində "Cədvəli dərc et" düyməsini basın. Bu, nəticəni dərhal bütün məşqçilərə göndərir.';
 
 const SECTIONS = [
   {
