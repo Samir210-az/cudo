@@ -43,6 +43,17 @@ export default function Categories({ competition, config, athletes, brackets }) 
         </button>
       </div>
 
+      {categories.some((c) => c.cls === null) && (
+        <div className="notice error" style={{ marginBottom: 14 }}>
+          <strong>Bəzi qruplarda çəki kateqoriyası təyin olunmayıb</strong>
+          <p>
+            Bu qruplarda çəki nəzərə alınmır və hamı bir kateqoriyadadır:{' '}
+            {[...new Set(categories.filter((c) => c.cls === null).map((c) => c.label))].join(', ')}.
+            Ayarlar bölməsində çəki cədvəlini yazın.
+          </p>
+        </div>
+      )}
+
       {unassigned.length > 0 && (
         <div className="notice error" style={{ marginBottom: 14 }}>
           <strong>{unassigned.length} idmançı kateqoriyaya düşmür</strong>

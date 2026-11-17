@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Field, Icon, useToast } from '../ui';
 import { update } from '../../lib/db';
-import { parseClasses } from '../../lib/tournament';
+import { defaultClasses, parseClasses } from '../../lib/tournament';
 
 export default function TournamentSettings({ competition, config, hasBrackets, reload }) {
   const notify = useToast();
@@ -58,8 +58,11 @@ export default function TournamentSettings({ competition, config, hasBrackets, r
       <section className="card">
         <h2>Çəki kateqoriyaları</h2>
         <p className="row-sub" style={{ marginBottom: 10 }}>
-          Hər yaş qrupu və cins üçün vergüllə yazın. Məsələn: -34, -37, -40, +40. Boş buraxılsa həmin qrupda çəki bölgüsü olmur.
+          Hər yaş qrupu və cins üçün vergüllə yazın. Məsələn: -34, -37, -40, +40. Boş buraxılsa həmin qrupda çəki bölgüsü olmur, hamı bir kateqoriyada olur. Qızlar üçün cədvəl qeydiyyat səhifəsində verilməyib, özünüz yazın.
         </p>
+        <button type="button" className="btn sm" style={{ marginBottom: 12 }} onClick={() => setClasses(defaultClasses(groups))}>
+          Hünər qeydiyyat səhifəsindəki oğlan cədvəlini yüklə
+        </button>
         {groups.filter((g) => g.code.trim()).map((g) => (
           ['oğlan', 'qız'].map((gender) => {
             const key = `${g.code.trim()}|${gender}`;
