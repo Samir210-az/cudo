@@ -46,16 +46,16 @@ export default function Tournament() {
     setTab(key);
     window.history.replaceState(null, '', `#${key}`);
   };
-  const shared = { competition, config, athletes, brackets, reload };
+  const shared = { competition, config, athletes, brackets, reload, goTo: choose };
 
   return (
-    <>
+    <div className="tdark">
       <PageHead
         title={`${competition.name} · turnir`}
         subtitle={[fmtDate(competition.held_on), competition.location, `${athletes.length} idmançı`].filter(Boolean).join(' · ')}
         back={<Link className="back-link" to={`/panel/yarislar/${id}`}>← Yarış</Link>}
       />
-      <div className="tabs scroll" role="tablist">
+      <div className="tabs wrap" role="tablist">
         {TABS.map(([key, label]) => (
           <button key={key} type="button" role="tab" className="tab" aria-selected={tab === key} onClick={() => choose(key)}>{label}</button>
         ))}
@@ -67,6 +67,6 @@ export default function Tournament() {
       {tab === 'gorusler' && <Matches {...shared} />}
       {tab === 'neticeler' && <Results {...shared} />}
       {tab === 'ayarlar' && <TournamentSettings key={JSON.stringify(competition.tournament || {})} competition={competition} config={config} hasBrackets={brackets.length > 0} reload={reload} />}
-    </>
+    </div>
   );
 }

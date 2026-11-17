@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Empty, Field, Icon, Modal, useToast } from '../ui';
 import AthleteForm, { toPayload, validateAthlete } from './AthleteForm';
+import FixMissing from './FixMissing';
 import { addMany, listClubs, listFor, remove } from '../../lib/db';
 import { useQuery } from '../../lib/hooks';
 import { calcAge, fmtDate, fullName, todayISO } from '../../lib/format';
 import { BRAND } from '../../lib/settings';
-import { GENDERS, STATUSES, TYPES, athleteName, categoryOf } from '../../lib/tournament';
+import { GENDERS, STATUSES, TYPES, athleteName, categoryOf, groupCategories } from '../../lib/tournament';
 
 const blankRow = () => ({ last_name: '', first_name: '', birth_date: '', gender: '', declared_kg: '' });
 
@@ -234,6 +235,8 @@ export default function Registration({ competition, config, athletes, brackets, 
       .sort((a, b) => athleteName(a).localeCompare(athleteName(b), 'az'));
   }, [athletes, q, age, status, config]);
 
+  const missing = useMemo(() => groupCategories(athletes, config).unassigned, [athletes, config]);
+
   const removeAthlete = async (a) => {
     const warn = drawnIds.has(a.id) ? ' Püşkatma artıq keçirilib, tablo ayrıca yenilənməlidir.' : '';
     if (!window.confirm(`${athleteName(a)} siyahıdan silinsin?${warn}`)) return;
@@ -251,6 +254,9 @@ export default function Registration({ competition, config, athletes, brackets, 
         <button type="button" className="btn primary" onClick={() => setMode({ type: 'one' })}><Icon name="plus" /> Tək idmançı</button>
         <button type="button" className="btn" onClick={() => setMode({ type: 'bulk' })}><Icon name="users" /> Kütləvi əlavə et</button>
         <button type="button" className="btn" onClick={() => setMode({ type: 'own' })}><Icon name="trophy" /> Filialların uşaqlarından</button>
+        {missing.length > 0 && (
+          <button type="button" className="btn warn" onClick={() => setMode({ type: 'fix' })}>Çatışmayanı tamamla ({missing.length})</button>
+        )}
       </div>
 
       <div className="filters">
@@ -279,18 +285,28 @@ export default function Registration({ competition, config, athletes, brackets, 
             {shown.map((a) => {
               const cat = categoryOf(a, config);
               return (
-                <div className="row" key={a.id} style={{ flexWrap: 'wrap' }}>
-                  <div className="row-main">
-                    <div className="row-title">{athleteName(a)}</div>
-                    <div className="row-sub">
-                      {fmtDate(a.birth_date)} · {GENDERS[a.gender] || '—'} · {a.weighed_kg ?? a.declared_kg ?? '—'} kq
-                      {a.group_type === 'teze' ? ` · ${TYPES.teze}` : ''} · {a.club_name}{a.coach ? ` · ${a.coach}` : ''}
+                <div className="t-ath" key={a.id}>
+                  <div className="t-ath-main">
+                    <div className="t-ath-name">{athleteName(a)}</div>
+                    <div className="t-ath-meta">
+                      {[
+                        a.birth_date ? fmtDate(a.birth_date) : null,
+                        GENDERS[a.gender] || null,
+                        (a.weighed_kg ?? a.declared_kg) != null ? `${a.weighed_kg ?? a.declared_kg} kq` : null,
+                        a.group_type === 'teze' ? TYPES.teze : null,
+                        a.club_name,
+                        a.coach,
+                      ].filter(Boolean).join(' · ')}
+                    </div>
+                    <div className="t-ath-tags">
+                      <span className={`badge ${a.status === 'cekildi' ? 'ok' : a.status === 'kenar' ? 'bad' : ''}`}>{STATUSES[a.status]}</span>
+                      {cat.key ? <span className="badge">{cat.label}</span> : <span className="badge warn">{cat.problem}</span>}
                     </div>
                   </div>
-                  <span className={`badge ${a.status === 'cekildi' ? 'ok' : a.status === 'kenar' ? 'bad' : ''}`}>{STATUSES[a.status]}</span>
-                  {cat.key ? <span className="badge">{cat.label}</span> : <span className="badge warn">{cat.problem}</span>}
-                  <button type="button" className="icon-btn" onClick={() => setMode({ type: 'one', athlete: a })} aria-label="Redaktə"><Icon name="edit" /></button>
-                  <button type="button" className="icon-btn" onClick={() => removeAthlete(a)} aria-label="Sil"><Icon name="trash" /></button>
+                  <div className="t-ath-actions">
+                    <button type="button" className="icon-btn" onClick={() => setMode({ type: 'one', athlete: a })} aria-label="Redaktə"><Icon name="edit" /></button>
+                    <button type="button" className="icon-btn" onClick={() => removeAthlete(a)} aria-label="Sil"><Icon name="trash" /></button>
+                  </div>
                 </div>
               );
             })}
@@ -301,6 +317,7 @@ export default function Registration({ competition, config, athletes, brackets, 
       {mode?.type === 'one' && (
         <AthleteForm competitionId={competition.id} athlete={mode.athlete} clubs={clubs} existing={athletes} onClose={() => setMode(null)} onSaved={reload} />
       )}
+      {mode?.type === 'fix' && <FixMissing items={missing} onClose={() => setMode(null)} onSaved={reload} />}
       {mode?.type === 'bulk' && <BulkAdd competitionId={competition.id} clubs={clubs} onClose={() => setMode(null)} onSaved={reload} />}
       {mode?.type === 'own' && (
         <ImportOwn competitionId={competition.id} taken={new Set(athletes.map((a) => a.child_id).filter(Boolean))} onClose={() => setMode(null)} onSaved={reload} />
