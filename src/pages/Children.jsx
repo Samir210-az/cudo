@@ -11,6 +11,8 @@ import { beltRank } from '../lib/belts';
 import { beltStyle } from '../lib/belts';
 import { avatarTone, fetchSettings, initials } from '../lib/settings';
 import { byName, list } from '../lib/db';
+import Medal from '../components/Medal';
+import { recentChildMedals } from '../lib/medals';
 
 export default function Children() {
   const notify = useToast();
@@ -26,6 +28,8 @@ export default function Children() {
     async () => (await list('children')).sort(byName),
     [],
   );
+
+  const { data: medals } = useQuery(() => recentChildMedals().catch(() => ({ for: () => [] })), []);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLocaleLowerCase('az');
@@ -109,7 +113,10 @@ export default function Children() {
               <Link className="row belted" key={c.id} to={`/panel/usaqlar/${c.id}`} style={{ '--belt': belt?.stripe }}>
                 <span className={`avatar ${avatarTone(c)}`} aria-hidden="true">{initials(c)}</span>
                 <div className="row-main">
-                  <div className="row-title"><BeltIcon name={c.belt} size={18} />{fullName(c)}</div>
+                  <div className="row-title">
+                    <BeltIcon name={c.belt} size={18} />{fullName(c)}
+                    {medals?.for(c).map((m, i) => <Medal key={i} place={m.place} title={m.competition} />)}
+                  </div>
                   <div className="row-sub">
                     {calcAge(c.birth_date)} yaş · {gradeLabel(c.grade)}
                     {c.school ? `, ${c.school}` : ''} · {trainingDuration(c.joined_at)}{c.training_time ? ` · ${c.training_time}` : ''}

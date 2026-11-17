@@ -7,7 +7,7 @@ const splitName = (full) => {
   return { last: last.toLocaleUpperCase('az'), rest: rest.join(' ') };
 };
 
-function Side({ bracket, id, color, score, win, lose, bye }) {
+function Side({ bracket, id, color, score, win, lose, bye, method }) {
   const person = bracket.athletes.find((a) => a.id === id);
   const name = person ? splitName(person.name) : null;
   return (
@@ -25,6 +25,7 @@ function Side({ bracket, id, color, score, win, lose, bye }) {
           {Array.from({ length: score?.shido || 0 }, (_, i) => <i className="bk-shido" key={i} />)}
         </span>
       )}
+      {win && method && <span className="bk-method">{method}</span>}
       {win && <span className="bk-win" aria-label="Qalib">◂</span>}
     </div>
   );
@@ -33,6 +34,7 @@ function Side({ bracket, id, color, score, win, lose, bye }) {
 export function BracketCard({ bracket, match, number, onPick, active }) {
   const decided = Boolean(match.winner);
   const ready = Boolean(match.a && match.b) && !match.bye;
+  const shownMethod = decided && !match.bye && match.method !== 'Bye' ? match.method : null;
   return (
     <button
       type="button"
@@ -42,8 +44,8 @@ export function BracketCard({ bracket, match, number, onPick, active }) {
       disabled={!ready && !decided}
     >
       <span className="bk-no">{number}</span>
-      <Side bracket={bracket} id={match.a} color="white" score={match.score?.a} win={decided && match.winner === match.a && !match.bye} lose={decided && match.winner !== match.a && !match.bye} />
-      <Side bracket={bracket} id={match.b} color="blue" score={match.score?.b} bye={match.bye} win={decided && match.winner === match.b} lose={decided && match.winner !== match.b && !match.bye} />
+      <Side bracket={bracket} id={match.a} color="white" score={match.score?.a} method={shownMethod} win={decided && match.winner === match.a && !match.bye} lose={decided && match.winner !== match.a && !match.bye} />
+      <Side bracket={bracket} id={match.b} color="blue" score={match.score?.b} method={shownMethod} bye={match.bye} win={decided && match.winner === match.b} lose={decided && match.winner !== match.b && !match.bye} />
     </button>
   );
 }
@@ -127,6 +129,9 @@ export default function BracketView({ bracket, onSave }) {
           </div>
         )}
       </div>
+      {bracket.matches.some((m) => m.score) && (
+        <p className="bk-legend">Hesab: üç rəqəm ardıcıl İppon, Vaza-ari, Yuko deməkdir (012 = 0 ippon, 1 vaza-ari, 2 yuko). Sarı zolaq şidodur.</p>
+      )}
       {detail}
       {result.complete && (
         <p className="row-sub" style={{ marginTop: 10 }}>
