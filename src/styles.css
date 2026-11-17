@@ -517,16 +517,16 @@ details.cat summary .row-title { flex: 1; min-width: 120px; }
 .tdark .modal-backdrop { background: rgba(3, 6, 12, 0.7); }
 .tdark .match-card { background: var(--card); border-color: var(--line); box-shadow: none; }
 .tdark .match-card.done { border-color: #1f5a3a; }
-.tdark .winner-btn { background: #10141f; border-color: #323b57; color: var(--text); }
+.tdark .winner-btn { background: #14213d; border-color: #3b4a69; color: var(--text); }
 .tdark .winner-btn.picked { background: #12351f; border-color: #2f8f58; }
 .tdark .winner-btn:hover:not([disabled]) { border-color: #6d86ff; }
 .tdark .score-col { border-color: var(--line); }
-.tdark .cnt-btn { background: #10141f; border-color: #323b57; color: var(--text); }
+.tdark .cnt-btn { background: #14213d; border-color: #3b4a69; color: var(--text); }
 .tdark .cnt-btn.plus { background: #12351f; border-color: #2f8f58; color: #5fd48c; }
-.tdark .match-box { background: #10141f; border-color: var(--line); }
+.tdark .match-box { background: #14213d; border-color: var(--line); }
 .tdark .side.win { background: #12351f; }
-.tdark .match-no { background: #2a3350; }
-.tdark .bk-dark { background: #0b0f18; border: 1px solid var(--line); }
+.tdark .match-no { background: #36466a; }
+.tdark .bk-dark { background: #0f1a33; border: 1px solid var(--line); }
 .tdark .check-line, .tdark .check { color: var(--text); }
 .tdark a { color: #8ba2ff; }
 
@@ -629,3 +629,12 @@ details.more[open] .more-list { display: grid; gap: 8px; margin-top: 8px; }
 @media (min-width: 720px) {
   details.more[open] .more-list { position: absolute; z-index: 10; min-width: 240px; padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: #1b2845; }
 }
+
+/* Siyahı sətirləri: klub saytındakı kimi kart içində rəngli sol zolaqlı bloklar */
+.app .card > .list { gap: 8px; }
+.app .card > .list > .row { background: var(--item); border: 0; border-left: 5px solid #c3112b; border-radius: 14px; padding: 12px 14px; }
+.app .card > .list > .row:nth-child(3n + 2) { border-left-color: var(--gold); }
+.app .card > .list > .row:nth-child(3n) { border-left-color: #5b8def; }
+.app .card > .list > .row.belted { border-left-color: var(--belt, #c3112b); }
+.app .row-sub, .app .muted { color: var(--muted); }
+.app .topbar { background: linear-gradient(180deg, #152850, #10203f); border-bottom-color: var(--line); }
